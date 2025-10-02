@@ -9,7 +9,8 @@ using namespace std::chrono_literals;
 
 class SubscribePublisher : public rclcpp::Node {
 public:
-  explicit SubscribePublisher(const rclcpp::NodeOptions &options = rclcpp::NodeOptions())
+  explicit SubscribePublisher(
+      const rclcpp::NodeOptions &options = rclcpp::NodeOptions())
       : Node("subscribe_publisher", options), rng_(std::random_device{}()),
         dist_(10000, 10000000) {
     this->declare_parameter("topic_id", 1);

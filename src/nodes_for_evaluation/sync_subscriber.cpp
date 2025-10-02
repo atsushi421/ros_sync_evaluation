@@ -241,21 +241,6 @@ private:
   std::string session_name_;
 };
 
-// Wrapper component that creates the appropriate template instance
-class SyncSubscriberComponent : public rclcpp::Node {
-public:
-  explicit SyncSubscriberComponent(
-      const rclcpp::NodeOptions &options = rclcpp::NodeOptions())
-      : Node("sync_subscriber_wrapper", options) {
-    // This node is just a placeholder - the real work is done by registering
-    // the template specializations
-    RCLCPP_WARN(this->get_logger(),
-                "SyncSubscriberComponent is a placeholder. Use "
-                "SyncSubscriber1, SyncSubscriber2, SyncSubscriber3, or "
-                "SyncSubscriber4 instead.");
-  }
-};
-
 // Register each template specialization as a separate component
 RCLCPP_COMPONENTS_REGISTER_NODE(SyncSubscriber<1>)
 RCLCPP_COMPONENTS_REGISTER_NODE(SyncSubscriber<2>)

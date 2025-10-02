@@ -100,7 +100,7 @@ CONTAINER_PID=$!
 echo -e "${GREEN}  Container PID: $CONTAINER_PID${NC}"
 
 # Wait a moment for the container process to start
-sleep 1
+sleep 2
 
 # Set RT priority (SCHED_FIFO 99) for the component container process
 if [ -n "$CONTAINER_PID" ] && kill -0 "$CONTAINER_PID" 2>/dev/null; then

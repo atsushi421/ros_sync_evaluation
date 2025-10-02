@@ -1,9 +1,3 @@
-#!/usr/bin/env python3
-"""
-Visualize latency from PMU analyzer elapsed time logs.
-Calculates the difference between the 3rd and 4th columns (timestamps).
-"""
-
 import argparse
 import matplotlib.pyplot as plt
 import numpy as np
@@ -62,7 +56,8 @@ def plot_latency(indices, latencies_us, log_file_path, output_path=None):
     # Plot 1: Latency over time
     ax1.plot(indices, latencies_us, marker='o', markersize=3, linestyle='-', linewidth=1)
     ax1.axhline(y=mean_latency, color='r', linestyle='--', label=f'Mean: {mean_latency:.2f} μs')
-    ax1.axhline(y=median_latency, color='g', linestyle='--', label=f'Median: {median_latency:.2f} μs')
+    ax1.axhline(y=median_latency, color='g', linestyle='--',
+                label=f'Median: {median_latency:.2f} μs')
     ax1.set_xlabel('Message Index')
     ax1.set_ylabel('Latency (μs)')
     ax1.set_title(f'Message Latency Over Time\n{Path(log_file_path).name}')
@@ -72,7 +67,8 @@ def plot_latency(indices, latencies_us, log_file_path, output_path=None):
     # Plot 2: Histogram
     ax2.hist(latencies_us, bins=50, edgecolor='black', alpha=0.7)
     ax2.axvline(x=mean_latency, color='r', linestyle='--', label=f'Mean: {mean_latency:.2f} μs')
-    ax2.axvline(x=median_latency, color='g', linestyle='--', label=f'Median: {median_latency:.2f} μs')
+    ax2.axvline(x=median_latency, color='g', linestyle='--',
+                label=f'Median: {median_latency:.2f} μs')
     ax2.set_xlabel('Latency (μs)')
     ax2.set_ylabel('Frequency')
     ax2.set_title('Latency Distribution')
@@ -135,8 +131,9 @@ def main():
         description='Visualize latency from PMU analyzer elapsed time logs')
     parser.add_argument('log_file', type=str,
                         help='Path to the PMU analyzer log file')
-    parser.add_argument('-o', '--output', type=str, default=None,
-                        help='Output path for the plot (e.g., latency.png). If not specified, displays interactively.')
+    parser.add_argument(
+        '-o', '--output', type=str, default=None,
+        help='Output path for the plot (e.g., latency.png). If not specified, displays interactively.')
     parser.add_argument('--no-plot', action='store_true',
                         help='Only print statistics without plotting')
 
