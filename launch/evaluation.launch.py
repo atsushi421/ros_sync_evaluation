@@ -8,7 +8,7 @@ import os
 
 def generate_launch_description():
     # Set PMU analyzer config file environment variable
-    pkg_share = get_package_share_directory('ros_sync_evaluation')
+    pkg_share = get_package_share_directory('nodes_for_evaluation')
     pmu_config_path = os.path.join(pkg_share, 'config', 'pmu_config.yaml')
     set_pmu_config_env = SetEnvironmentVariable(
         'PMU_ANALYZER_CONFIG_FILE',
@@ -25,7 +25,7 @@ def generate_launch_description():
 
     # Create publisher nodes dynamically
     publisher1 = Node(
-        package='ros_sync_evaluation',
+        package='nodes_for_evaluation',
         executable='subscribe_publisher',
         name='subscribe_publisher_1',
         parameters=[{'topic_id': 1}],
@@ -33,7 +33,7 @@ def generate_launch_description():
     )
 
     publisher2 = Node(
-        package='ros_sync_evaluation',
+        package='nodes_for_evaluation',
         executable='subscribe_publisher',
         name='subscribe_publisher_2',
         parameters=[{'topic_id': 2}],
@@ -41,7 +41,7 @@ def generate_launch_description():
     )
 
     publisher3 = Node(
-        package='ros_sync_evaluation',
+        package='nodes_for_evaluation',
         executable='subscribe_publisher',
         name='subscribe_publisher_3',
         parameters=[{'topic_id': 3}],
@@ -49,7 +49,7 @@ def generate_launch_description():
     )
 
     publisher4 = Node(
-        package='ros_sync_evaluation',
+        package='nodes_for_evaluation',
         executable='subscribe_publisher',
         name='subscribe_publisher_4',
         parameters=[{'topic_id': 4}],
@@ -58,7 +58,7 @@ def generate_launch_description():
 
     # Subscriber node that accepts command line argument
     subscriber = Node(
-        package='ros_sync_evaluation',
+        package='nodes_for_evaluation',
         executable='sync_subscriber',
         name='sync_subscriber',
         arguments=[num_publishers],
@@ -67,7 +67,7 @@ def generate_launch_description():
 
     # Start source publisher
     start_pub = Node(
-        package='ros_sync_evaluation',
+        package='nodes_for_evaluation',
         executable='source_publisher',
         name='source_publisher',
         output='screen'

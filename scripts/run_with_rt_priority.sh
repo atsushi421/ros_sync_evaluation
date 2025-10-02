@@ -27,7 +27,7 @@ if [ $# -lt 2 ]; then
 	echo "  install_path: Path to ROS 2 installation directory"
 	echo ""
 	echo "Example:"
-	echo "  sudo $0 3 /home/atsushi/ros_sync_evaluation/install/ros_sync_evaluation"
+	echo "  sudo $0 3 /home/atsushi/ros_sync_evaluation/install/nodes_for_evaluation"
 	exit 1
 fi
 
@@ -47,9 +47,9 @@ if [ ! -d "$INSTALL_PATH" ]; then
 fi
 
 # Set executable paths
-SOURCE_PUBLISHER="$INSTALL_PATH/lib/ros_sync_evaluation/source_publisher"
-SUBSCRIBE_PUBLISHER="$INSTALL_PATH/lib/ros_sync_evaluation/subscribe_publisher"
-SYNC_SUBSCRIBER="$INSTALL_PATH/lib/ros_sync_evaluation/sync_subscriber"
+SOURCE_PUBLISHER="$INSTALL_PATH/lib/nodes_for_evaluation/source_publisher"
+SUBSCRIBE_PUBLISHER="$INSTALL_PATH/lib/nodes_for_evaluation/subscribe_publisher"
+SYNC_SUBSCRIBER="$INSTALL_PATH/lib/nodes_for_evaluation/sync_subscriber"
 
 # Check if executables exist
 if [ ! -f "$SOURCE_PUBLISHER" ]; then
@@ -72,6 +72,15 @@ if ! command -v chrt &>/dev/null; then
 	echo -e "${RED}Error: 'chrt' command not found${NC}"
 	echo "Install util-linux package: sudo apt-get install util-linux"
 	exit 1
+fi
+
+# Source ROS 2 environment
+WORKSPACE_ROOT="/home/atsushi/ros_sync_evaluation"
+if [ -f "$WORKSPACE_ROOT/install/setup.bash" ]; then
+	source "$WORKSPACE_ROOT/install/setup.bash"
+	echo -e "${GREEN}Sourced ROS 2 workspace: $WORKSPACE_ROOT/install/setup.bash${NC}"
+else
+	echo -e "${YELLOW}Warning: setup.bash not found at $WORKSPACE_ROOT/install/setup.bash${NC}"
 fi
 
 # Set PMU analyzer config file if not already set

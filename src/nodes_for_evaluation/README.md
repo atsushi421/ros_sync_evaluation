@@ -7,6 +7,17 @@ This package provides a parametric evaluation framework for `message_filters::sy
 - `source_publisher`: Publishes continuous start signals (10Hz) to synchronize all publishers
 - `subscribe_publisher`: Parametric publisher that reacts to start signals with random pseudo processing
 - `sync_subscriber`: Parametric subscriber supporting 1-4 synchronized topics using ExactTime policy
+- `custom_msg`: Custom message package defining HeaderExtraStamp message
+
+## Building
+
+The workspace should be structured with both packages accessible:
+
+```bash
+cd /home/atsushi/ros_sync_ws
+colcon build
+source install/setup.bash
+```
 
 ## Running
 
@@ -16,18 +27,18 @@ For optimal real-time performance, use the wrapper script that launches all node
 
 ```bash
 # Launch all nodes (source_publisher, N subscribe_publishers, sync_subscriber with RT priority)
-sudo scripts/run_with_rt_priority.sh <num_publishers> install/ros_sync_evaluation
+sudo scripts/run_with_rt_priority.sh <num_publishers> install/nodes_for_evaluation
 ```
 
 Example for 3 publishers:
 ```bash
-sudo scripts/run_with_rt_priority.sh 3 install/ros_sync_evaluation
+sudo scripts/run_with_rt_priority.sh 3 install/nodes_for_evaluation
 ```
 
 ### Alternative: Launch file (without real-time priority)
 
 ```bash
-ros2 launch ros_sync_evaluation evaluation.launch.py num_publishers:=3
+ros2 launch nodes_for_evaluation evaluation.launch.py num_publishers:=3
 ```
 
 **Note:** The launch file automatically sets `PMU_ANALYZER_CONFIG_FILE` for all nodes but does not provide real-time scheduling.
@@ -41,20 +52,20 @@ export PMU_ANALYZER_CONFIG_FILE=/home/atsushi/ros_sync_evaluation/config/pmu_con
 
 Terminal 1 (Start signal):
 ```bash
-ros2 run ros_sync_evaluation source_publisher
+ros2 run nodes_for_evaluation source_publisher
 ```
 
 Terminal 2-N (Publishers):
 ```bash
-ros2 run ros_sync_evaluation subscribe_publisher --ros-args -p topic_id:=1
-ros2 run ros_sync_evaluation subscribe_publisher --ros-args -p topic_id:=2
-ros2 run ros_sync_evaluation subscribe_publisher --ros-args -p topic_id:=3
+ros2 run nodes_for_evaluation subscribe_publisher --ros-args -p topic_id:=1
+ros2 run nodes_for_evaluation subscribe_publisher --ros-args -p topic_id:=2
+ros2 run nodes_for_evaluation subscribe_publisher --ros-args -p topic_id:=3
 ```
 
 Terminal N+1 (Subscriber):
 ```bash
 # Without RT priority
-ros2 run ros_sync_evaluation sync_subscriber 3
+ros2 run nodes_for_evaluation sync_subscriber 3
 ```
 
 ## Expected Behavior
@@ -83,7 +94,7 @@ ros2 run ros_sync_evaluation sync_subscriber 3
 - This ensures all publishers are synchronized to the same clock source
 
 ### Message Flow
-- `source_publisher` → `start_topic` (geometry_msgs::msg::PointStamped) → all `subscribe_publisher` instances
+- `source_publisher` → `start_topic` (custom_msg::msg::HeaderExtraStamp) → all `subscribe_publisher` instances
 - Each `subscribe_publisher` → `topic1`, `topic2`, `topic3`, or `topic4` → `sync_subscriber`
 - `sync_subscriber` uses ExactTime policy to match messages with identical timestamps
-- PointStamped messages contain dummy point data (x=1.0, y=2.0, z=3.0) set by source_publisher
+- HeaderExtraStamp messages contain both header.stamp and extra_stamp fields

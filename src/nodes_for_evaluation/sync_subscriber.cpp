@@ -1,11 +1,16 @@
+#include <custom_msg/msg/header_extra_stamp.hpp>
 #include <memory>
 #include <message_filters/subscriber.h>
 #include <message_filters/sync_policies/exact_time.h>
 #include <message_filters/synchronizer.h>
 #include <pmu_analyzer.hpp>
 #include <rclcpp/rclcpp.hpp>
-#include <geometry_msgs/msg/point_stamped.hpp>
 #include <vector>
+
+long long to_microseconds(const builtin_interfaces::msg::Time &t) {
+  return static_cast<long long>(t.sec) * 1000000LL +
+         static_cast<long long>(t.nanosec) / 1000LL;
+}
 
 // Template specializations for different numbers of publishers
 template <int N> class SyncSubscriber;
@@ -17,7 +22,7 @@ public:
   SyncSubscriber()
       : Node("sync_subscriber"), sync_cb_index_(0),
         session_name_("sync_subscriber_subscribed") {
-    sub1_ = this->create_subscription<geometry_msgs::msg::PointStamped>(
+    sub1_ = this->create_subscription<custom_msg::msg::HeaderExtraStamp>(
         "topic1", 1000,
         std::bind(&SyncSubscriber<1>::callback, this, std::placeholders::_1));
 
@@ -27,16 +32,16 @@ public:
   ~SyncSubscriber() { pmu_analyzer::ELAPSED_TIME_CLOSE(session_name_); }
 
 private:
-  void callback(const geometry_msgs::msg::PointStamped::ConstSharedPtr &msg1) {
+  void callback(const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg1) {
     pmu_analyzer::ELAPSED_TIME_TIMESTAMP(session_name_, 0, true,
-                                         std::stoi(msg1->header.frame_id));
+                                         to_microseconds(msg1->extra_stamp));
     RCLCPP_INFO(this->get_logger(),
                 "SyncSubscriber: index = %s, sync_cb_index_ = %zu",
                 msg1->header.frame_id.c_str(), sync_cb_index_);
     sync_cb_index_++;
   }
 
-  rclcpp::Subscription<geometry_msgs::msg::PointStamped>::SharedPtr sub1_;
+  rclcpp::Subscription<custom_msg::msg::HeaderExtraStamp>::SharedPtr sub1_;
   size_t sync_cb_index_;
   std::string session_name_;
 };
@@ -47,12 +52,12 @@ public:
   SyncSubscriber()
       : Node("sync_subscriber"), sync_cb_index_(0),
         session_name_("sync_subscriber_subscribed") {
-    sub1_ =
-        std::make_shared<message_filters::Subscriber<geometry_msgs::msg::PointStamped>>(
-            this, "topic1");
-    sub2_ =
-        std::make_shared<message_filters::Subscriber<geometry_msgs::msg::PointStamped>>(
-            this, "topic2");
+    sub1_ = std::make_shared<
+        message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
+        this, "topic1");
+    sub2_ = std::make_shared<
+        message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
+        this, "topic2");
 
     sync_ = std::make_shared<message_filters::Synchronizer<SyncPolicy>>(
         SyncPolicy(1000), *sub1_, *sub2_);
@@ -66,24 +71,30 @@ public:
   ~SyncSubscriber() { pmu_analyzer::ELAPSED_TIME_CLOSE(session_name_); }
 
 private:
-  typedef message_filters::sync_policies::ExactTime<geometry_msgs::msg::PointStamped,
-                                                    geometry_msgs::msg::PointStamped>
+  typedef message_filters::sync_policies::ExactTime<
+      custom_msg::msg::HeaderExtraStamp, custom_msg::msg::HeaderExtraStamp>
       SyncPolicy;
 
-  void callback(const geometry_msgs::msg::PointStamped::ConstSharedPtr &msg1,
-                const geometry_msgs::msg::PointStamped::ConstSharedPtr &msg2) {
+  void callback(const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg1,
+                const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg2) {
     pmu_analyzer::ELAPSED_TIME_TIMESTAMP(
         session_name_, 0, true,
-        std::stoi(std::max(msg1->header.frame_id, msg2->header.frame_id)));
+        std::max(to_microseconds(msg1->extra_stamp),
+                 to_microseconds(msg2->extra_stamp)));
     RCLCPP_INFO(this->get_logger(),
                 "SyncSubscriber: msg1_index = %s, msg2_index = %s, "
                 "sync_cb_index_ = %zu",
-                msg1->header.frame_id.c_str(), msg2->header.frame_id.c_str(), sync_cb_index_);
+                msg1->header.frame_id.c_str(), msg2->header.frame_id.c_str(),
+                sync_cb_index_);
     sync_cb_index_++;
   }
 
-  std::shared_ptr<message_filters::Subscriber<geometry_msgs::msg::PointStamped>> sub1_;
-  std::shared_ptr<message_filters::Subscriber<geometry_msgs::msg::PointStamped>> sub2_;
+  std::shared_ptr<
+      message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>
+      sub1_;
+  std::shared_ptr<
+      message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>
+      sub2_;
   std::shared_ptr<message_filters::Synchronizer<SyncPolicy>> sync_;
   size_t sync_cb_index_;
   std::string session_name_;
@@ -95,15 +106,15 @@ public:
   SyncSubscriber()
       : Node("sync_subscriber"), sync_cb_index_(0),
         session_name_("sync_subscriber_subscribed") {
-    sub1_ =
-        std::make_shared<message_filters::Subscriber<geometry_msgs::msg::PointStamped>>(
-            this, "topic1");
-    sub2_ =
-        std::make_shared<message_filters::Subscriber<geometry_msgs::msg::PointStamped>>(
-            this, "topic2");
-    sub3_ =
-        std::make_shared<message_filters::Subscriber<geometry_msgs::msg::PointStamped>>(
-            this, "topic3");
+    sub1_ = std::make_shared<
+        message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
+        this, "topic1");
+    sub2_ = std::make_shared<
+        message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
+        this, "topic2");
+    sub3_ = std::make_shared<
+        message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
+        this, "topic3");
 
     sync_ = std::make_shared<message_filters::Synchronizer<SyncPolicy>>(
         SyncPolicy(1000), *sub1_, *sub2_, *sub3_);
@@ -118,15 +129,18 @@ public:
 
 private:
   typedef message_filters::sync_policies::ExactTime<
-      geometry_msgs::msg::PointStamped, geometry_msgs::msg::PointStamped, geometry_msgs::msg::PointStamped>
+      custom_msg::msg::HeaderExtraStamp, custom_msg::msg::HeaderExtraStamp,
+      custom_msg::msg::HeaderExtraStamp>
       SyncPolicy;
 
-  void callback(const geometry_msgs::msg::PointStamped::ConstSharedPtr &msg1,
-                const geometry_msgs::msg::PointStamped::ConstSharedPtr &msg2,
-                const geometry_msgs::msg::PointStamped::ConstSharedPtr &msg3) {
+  void callback(const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg1,
+                const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg2,
+                const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg3) {
     pmu_analyzer::ELAPSED_TIME_TIMESTAMP(
         session_name_, 0, true,
-        std::stoi(std::max({msg1->header.frame_id, msg2->header.frame_id, msg3->header.frame_id})));
+        std::max({to_microseconds(msg1->extra_stamp),
+                  to_microseconds(msg2->extra_stamp),
+                  to_microseconds(msg3->extra_stamp)}));
     RCLCPP_INFO(this->get_logger(),
                 "SyncSubscriber: msg1_index = %s, msg2_index = %s, msg3_index "
                 "= %s, sync_cb_index_ = %zu",
@@ -135,9 +149,15 @@ private:
     sync_cb_index_++;
   }
 
-  std::shared_ptr<message_filters::Subscriber<geometry_msgs::msg::PointStamped>> sub1_;
-  std::shared_ptr<message_filters::Subscriber<geometry_msgs::msg::PointStamped>> sub2_;
-  std::shared_ptr<message_filters::Subscriber<geometry_msgs::msg::PointStamped>> sub3_;
+  std::shared_ptr<
+      message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>
+      sub1_;
+  std::shared_ptr<
+      message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>
+      sub2_;
+  std::shared_ptr<
+      message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>
+      sub3_;
   std::shared_ptr<message_filters::Synchronizer<SyncPolicy>> sync_;
   size_t sync_cb_index_;
   std::string session_name_;
@@ -149,18 +169,18 @@ public:
   SyncSubscriber()
       : Node("sync_subscriber"), sync_cb_index_(0),
         session_name_("sync_subscriber_subscribed") {
-    sub1_ =
-        std::make_shared<message_filters::Subscriber<geometry_msgs::msg::PointStamped>>(
-            this, "topic1");
-    sub2_ =
-        std::make_shared<message_filters::Subscriber<geometry_msgs::msg::PointStamped>>(
-            this, "topic2");
-    sub3_ =
-        std::make_shared<message_filters::Subscriber<geometry_msgs::msg::PointStamped>>(
-            this, "topic3");
-    sub4_ =
-        std::make_shared<message_filters::Subscriber<geometry_msgs::msg::PointStamped>>(
-            this, "topic4");
+    sub1_ = std::make_shared<
+        message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
+        this, "topic1");
+    sub2_ = std::make_shared<
+        message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
+        this, "topic2");
+    sub3_ = std::make_shared<
+        message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
+        this, "topic3");
+    sub4_ = std::make_shared<
+        message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
+        this, "topic4");
 
     sync_ = std::make_shared<message_filters::Synchronizer<SyncPolicy>>(
         SyncPolicy(1000), *sub1_, *sub2_, *sub3_, *sub4_);
@@ -175,31 +195,42 @@ public:
 
 private:
   typedef message_filters::sync_policies::ExactTime<
-      geometry_msgs::msg::PointStamped, geometry_msgs::msg::PointStamped, geometry_msgs::msg::PointStamped,
-      geometry_msgs::msg::PointStamped>
+      custom_msg::msg::HeaderExtraStamp, custom_msg::msg::HeaderExtraStamp,
+      custom_msg::msg::HeaderExtraStamp, custom_msg::msg::HeaderExtraStamp>
       SyncPolicy;
 
-  void callback(const geometry_msgs::msg::PointStamped::ConstSharedPtr &msg1,
-                const geometry_msgs::msg::PointStamped::ConstSharedPtr &msg2,
-                const geometry_msgs::msg::PointStamped::ConstSharedPtr &msg3,
-                const geometry_msgs::msg::PointStamped::ConstSharedPtr &msg4) {
+  void callback(const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg1,
+                const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg2,
+                const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg3,
+                const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg4) {
     pmu_analyzer::ELAPSED_TIME_TIMESTAMP(
         session_name_, 0, true,
-        std::stoi(std::max(
-            {msg1->header.frame_id, msg2->header.frame_id, msg3->header.frame_id, msg4->header.frame_id})));
+        std::max({to_microseconds(msg1->extra_stamp),
+                  to_microseconds(msg2->extra_stamp),
+                  to_microseconds(msg3->extra_stamp),
+                  to_microseconds(msg4->extra_stamp)}));
     RCLCPP_INFO(
         this->get_logger(),
         "SyncSubscriber: msg1_index = %s, msg2_index = %s, msg3_index = "
         "%s, msg4_index = %s, sync_cb_index_ = %zu",
-        msg1->header.frame_id.c_str(), msg2->header.frame_id.c_str(), msg3->header.frame_id.c_str(),
-        msg4->header.frame_id.c_str(), sync_cb_index_);
+        msg1->header.frame_id.c_str(), msg2->header.frame_id.c_str(),
+        msg3->header.frame_id.c_str(), msg4->header.frame_id.c_str(),
+        sync_cb_index_);
     sync_cb_index_++;
   }
 
-  std::shared_ptr<message_filters::Subscriber<geometry_msgs::msg::PointStamped>> sub1_;
-  std::shared_ptr<message_filters::Subscriber<geometry_msgs::msg::PointStamped>> sub2_;
-  std::shared_ptr<message_filters::Subscriber<geometry_msgs::msg::PointStamped>> sub3_;
-  std::shared_ptr<message_filters::Subscriber<geometry_msgs::msg::PointStamped>> sub4_;
+  std::shared_ptr<
+      message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>
+      sub1_;
+  std::shared_ptr<
+      message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>
+      sub2_;
+  std::shared_ptr<
+      message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>
+      sub3_;
+  std::shared_ptr<
+      message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>
+      sub4_;
   std::shared_ptr<message_filters::Synchronizer<SyncPolicy>> sync_;
   size_t sync_cb_index_;
   std::string session_name_;

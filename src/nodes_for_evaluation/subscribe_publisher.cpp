@@ -1,9 +1,8 @@
 #include <chrono>
+#include <custom_msg/msg/header_extra_stamp.hpp>
 #include <memory>
-#include <pmu_analyzer.hpp>
 #include <random>
 #include <rclcpp/rclcpp.hpp>
-#include <geometry_msgs/msg/point_stamped.hpp>
 
 using namespace std::chrono_literals;
 
@@ -16,22 +15,12 @@ public:
     topic_id_ = this->get_parameter("topic_id").as_int();
     std::string topic_name = "topic" + std::to_string(topic_id_);
 
-    publisher_ =
-        this->create_publisher<geometry_msgs::msg::PointStamped>(topic_name, 1000);
-    subscriber_ = this->create_subscription<geometry_msgs::msg::PointStamped>(
+    publisher_ = this->create_publisher<custom_msg::msg::HeaderExtraStamp>(
+        topic_name, 1000);
+    subscriber_ = this->create_subscription<custom_msg::msg::HeaderExtraStamp>(
         "start_topic", 1000,
         std::bind(&SubscribePublisher::start_callback, this,
                   std::placeholders::_1));
-
-    // Initialize PMU analyzer for elapsed time measurement
-    session_name_ =
-        "subscriber_publisher" + std::to_string(topic_id_) + "_published";
-    pmu_analyzer::ELAPSED_TIME_INIT(session_name_);
-  }
-
-  ~SubscribePublisher() {
-    // Close PMU analyzer session
-    pmu_analyzer::ELAPSED_TIME_CLOSE(session_name_);
   }
 
 private:
@@ -42,7 +31,7 @@ private:
     }
   }
 
-  void start_callback(const geometry_msgs::msg::PointStamped::SharedPtr msg) {
+  void start_callback(const custom_msg::msg::HeaderExtraStamp::SharedPtr msg) {
     int index = std::stoi(msg->header.frame_id);
     RCLCPP_INFO(this->get_logger(), "SubscribePublisher %d: %u", topic_id_,
                 index);
@@ -51,12 +40,13 @@ private:
     int iterations = dist_(rng_);
     pseudo_processing(iterations);
 
+    msg->extra_stamp = this->now();
     publisher_->publish(*msg);
-    pmu_analyzer::ELAPSED_TIME_TIMESTAMP(session_name_, 0, true, index);
   }
 
-  rclcpp::Publisher<geometry_msgs::msg::PointStamped>::SharedPtr publisher_;
-  rclcpp::Subscription<geometry_msgs::msg::PointStamped>::SharedPtr subscriber_;
+  rclcpp::Publisher<custom_msg::msg::HeaderExtraStamp>::SharedPtr publisher_;
+  rclcpp::Subscription<custom_msg::msg::HeaderExtraStamp>::SharedPtr
+      subscriber_;
   int topic_id_;
   std::string session_name_;
   std::mt19937 rng_;
