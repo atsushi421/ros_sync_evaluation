@@ -8,22 +8,6 @@ This package provides a parametric evaluation framework for `message_filters::sy
 - `subscribe_publisher`: Parametric publisher that reacts to start signals with random pseudo processing
 - `sync_subscriber`: Parametric subscriber supporting 1-4 synchronized topics using ExactTime policy
 
-## Features
-
-- **Parametric Publishers**: Configure number of publishers (1-4) dynamically
-- **Coordinated Startup**: Start signal ensures all publishers begin simultaneously
-- **Random Pseudo Processing**: Publishers simulate computational workload (1000-10000 iterations)
-- **PMU Analysis**: Integrated performance monitoring with pmu_analyzer
-- **Template-based Synchronization**: Compile-time optimized for different publisher counts
-- **Real-time Scheduling**: Wrapper script to run subscriber with SCHED_FIFO priority 99
-
-## Building
-
-```bash
-colcon build
-source install/setup.bash
-```
-
 ## Running
 
 ### Recommended: Launch all nodes with real-time priority
@@ -39,13 +23,6 @@ Example for 3 publishers:
 ```bash
 sudo scripts/run_with_rt_priority.sh 3 install/ros_sync_evaluation
 ```
-
-**Features:**
-- Automatically sets `PMU_ANALYZER_CONFIG_FILE` for all nodes
-- Launches source_publisher in background
-- Launches N subscribe_publisher instances with topic_id 1-N
-- Launches sync_subscriber with SCHED_FIFO priority 99
-- Press Ctrl+C to cleanly stop all nodes
 
 ### Alternative: Launch file (without real-time priority)
 
@@ -85,8 +62,8 @@ ros2 run ros_sync_evaluation sync_subscriber 3
 1. `source_publisher` waits 2 seconds, then begins broadcasting start signals continuously at 10Hz
 2. Each `subscribe_publisher` waits for start signals on `start_topic`
 3. Upon receiving a start signal, each publisher:
-   - Performs random pseudo processing (1000-10000 iterations of sin/cos calculations)
-   - Publishes the received header directly (preserving timestamp and sequence number)
+   - Performs random pseudo processing (10000-10000000 iterations of sin/cos calculations)
+   - Publishes the received message directly (preserving timestamp, frame_id, and point data)
 4. All publishers are synchronized by the same start signal stream
 5. `sync_subscriber` uses ExactTime policy to synchronize messages from all publishers
 6. PMU analyzer captures performance metrics throughout execution for all nodes
@@ -101,11 +78,12 @@ ros2 run ros_sync_evaluation sync_subscriber 3
 
 ### Timing Behavior
 - Start signals are published at 10Hz (100ms interval) after 2-second initial delay
-- Each publisher performs random pseudo processing (1000-10000 iterations) upon receiving start signal
-- Publishers forward the received header directly, preserving timestamp and sequence number
+- Each publisher performs random pseudo processing (10000-10000000 iterations) upon receiving start signal
+- Publishers forward the received message directly, preserving timestamp, frame_id, and point data
 - This ensures all publishers are synchronized to the same clock source
 
 ### Message Flow
-- `source_publisher` → `start_topic` (std_msgs::msg::Header) → all `subscribe_publisher` instances
+- `source_publisher` → `start_topic` (geometry_msgs::msg::PointStamped) → all `subscribe_publisher` instances
 - Each `subscribe_publisher` → `topic1`, `topic2`, `topic3`, or `topic4` → `sync_subscriber`
 - `sync_subscriber` uses ExactTime policy to match messages with identical timestamps
+- PointStamped messages contain dummy point data (x=1.0, y=2.0, z=3.0) set by source_publisher

@@ -3,7 +3,7 @@
 #include <pmu_analyzer.hpp>
 #include <random>
 #include <rclcpp/rclcpp.hpp>
-#include <std_msgs/msg/header.hpp>
+#include <geometry_msgs/msg/point_stamped.hpp>
 
 using namespace std::chrono_literals;
 
@@ -17,8 +17,8 @@ public:
     std::string topic_name = "topic" + std::to_string(topic_id_);
 
     publisher_ =
-        this->create_publisher<std_msgs::msg::Header>(topic_name, 1000);
-    subscriber_ = this->create_subscription<std_msgs::msg::Header>(
+        this->create_publisher<geometry_msgs::msg::PointStamped>(topic_name, 1000);
+    subscriber_ = this->create_subscription<geometry_msgs::msg::PointStamped>(
         "start_topic", 1000,
         std::bind(&SubscribePublisher::start_callback, this,
                   std::placeholders::_1));
@@ -42,8 +42,8 @@ private:
     }
   }
 
-  void start_callback(const std_msgs::msg::Header::SharedPtr msg) {
-    int index = std::stoi(msg->frame_id);
+  void start_callback(const geometry_msgs::msg::PointStamped::SharedPtr msg) {
+    int index = std::stoi(msg->header.frame_id);
     RCLCPP_INFO(this->get_logger(), "SubscribePublisher %d: %u", topic_id_,
                 index);
 
@@ -55,8 +55,8 @@ private:
     pmu_analyzer::ELAPSED_TIME_TIMESTAMP(session_name_, 0, true, index);
   }
 
-  rclcpp::Publisher<std_msgs::msg::Header>::SharedPtr publisher_;
-  rclcpp::Subscription<std_msgs::msg::Header>::SharedPtr subscriber_;
+  rclcpp::Publisher<geometry_msgs::msg::PointStamped>::SharedPtr publisher_;
+  rclcpp::Subscription<geometry_msgs::msg::PointStamped>::SharedPtr subscriber_;
   int topic_id_;
   std::string session_name_;
   std::mt19937 rng_;

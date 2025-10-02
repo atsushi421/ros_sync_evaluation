@@ -4,7 +4,7 @@
 #include <message_filters/synchronizer.h>
 #include <pmu_analyzer.hpp>
 #include <rclcpp/rclcpp.hpp>
-#include <std_msgs/msg/header.hpp>
+#include <geometry_msgs/msg/point_stamped.hpp>
 #include <vector>
 
 // Template specializations for different numbers of publishers
@@ -17,7 +17,7 @@ public:
   SyncSubscriber()
       : Node("sync_subscriber"), sync_cb_index_(0),
         session_name_("sync_subscriber_subscribed") {
-    sub1_ = this->create_subscription<std_msgs::msg::Header>(
+    sub1_ = this->create_subscription<geometry_msgs::msg::PointStamped>(
         "topic1", 1000,
         std::bind(&SyncSubscriber<1>::callback, this, std::placeholders::_1));
 
@@ -27,16 +27,16 @@ public:
   ~SyncSubscriber() { pmu_analyzer::ELAPSED_TIME_CLOSE(session_name_); }
 
 private:
-  void callback(const std_msgs::msg::Header::ConstSharedPtr &msg1) {
+  void callback(const geometry_msgs::msg::PointStamped::ConstSharedPtr &msg1) {
     pmu_analyzer::ELAPSED_TIME_TIMESTAMP(session_name_, 0, true,
-                                         std::stoi(msg1->frame_id));
+                                         std::stoi(msg1->header.frame_id));
     RCLCPP_INFO(this->get_logger(),
                 "SyncSubscriber: index = %s, sync_cb_index_ = %zu",
-                msg1->frame_id.c_str(), sync_cb_index_);
+                msg1->header.frame_id.c_str(), sync_cb_index_);
     sync_cb_index_++;
   }
 
-  rclcpp::Subscription<std_msgs::msg::Header>::SharedPtr sub1_;
+  rclcpp::Subscription<geometry_msgs::msg::PointStamped>::SharedPtr sub1_;
   size_t sync_cb_index_;
   std::string session_name_;
 };
@@ -48,10 +48,10 @@ public:
       : Node("sync_subscriber"), sync_cb_index_(0),
         session_name_("sync_subscriber_subscribed") {
     sub1_ =
-        std::make_shared<message_filters::Subscriber<std_msgs::msg::Header>>(
+        std::make_shared<message_filters::Subscriber<geometry_msgs::msg::PointStamped>>(
             this, "topic1");
     sub2_ =
-        std::make_shared<message_filters::Subscriber<std_msgs::msg::Header>>(
+        std::make_shared<message_filters::Subscriber<geometry_msgs::msg::PointStamped>>(
             this, "topic2");
 
     sync_ = std::make_shared<message_filters::Synchronizer<SyncPolicy>>(
@@ -66,24 +66,24 @@ public:
   ~SyncSubscriber() { pmu_analyzer::ELAPSED_TIME_CLOSE(session_name_); }
 
 private:
-  typedef message_filters::sync_policies::ExactTime<std_msgs::msg::Header,
-                                                    std_msgs::msg::Header>
+  typedef message_filters::sync_policies::ExactTime<geometry_msgs::msg::PointStamped,
+                                                    geometry_msgs::msg::PointStamped>
       SyncPolicy;
 
-  void callback(const std_msgs::msg::Header::ConstSharedPtr &msg1,
-                const std_msgs::msg::Header::ConstSharedPtr &msg2) {
+  void callback(const geometry_msgs::msg::PointStamped::ConstSharedPtr &msg1,
+                const geometry_msgs::msg::PointStamped::ConstSharedPtr &msg2) {
     pmu_analyzer::ELAPSED_TIME_TIMESTAMP(
         session_name_, 0, true,
-        std::stoi(std::max(msg1->frame_id, msg2->frame_id)));
+        std::stoi(std::max(msg1->header.frame_id, msg2->header.frame_id)));
     RCLCPP_INFO(this->get_logger(),
                 "SyncSubscriber: msg1_index = %s, msg2_index = %s, "
                 "sync_cb_index_ = %zu",
-                msg1->frame_id.c_str(), msg2->frame_id.c_str(), sync_cb_index_);
+                msg1->header.frame_id.c_str(), msg2->header.frame_id.c_str(), sync_cb_index_);
     sync_cb_index_++;
   }
 
-  std::shared_ptr<message_filters::Subscriber<std_msgs::msg::Header>> sub1_;
-  std::shared_ptr<message_filters::Subscriber<std_msgs::msg::Header>> sub2_;
+  std::shared_ptr<message_filters::Subscriber<geometry_msgs::msg::PointStamped>> sub1_;
+  std::shared_ptr<message_filters::Subscriber<geometry_msgs::msg::PointStamped>> sub2_;
   std::shared_ptr<message_filters::Synchronizer<SyncPolicy>> sync_;
   size_t sync_cb_index_;
   std::string session_name_;
@@ -96,13 +96,13 @@ public:
       : Node("sync_subscriber"), sync_cb_index_(0),
         session_name_("sync_subscriber_subscribed") {
     sub1_ =
-        std::make_shared<message_filters::Subscriber<std_msgs::msg::Header>>(
+        std::make_shared<message_filters::Subscriber<geometry_msgs::msg::PointStamped>>(
             this, "topic1");
     sub2_ =
-        std::make_shared<message_filters::Subscriber<std_msgs::msg::Header>>(
+        std::make_shared<message_filters::Subscriber<geometry_msgs::msg::PointStamped>>(
             this, "topic2");
     sub3_ =
-        std::make_shared<message_filters::Subscriber<std_msgs::msg::Header>>(
+        std::make_shared<message_filters::Subscriber<geometry_msgs::msg::PointStamped>>(
             this, "topic3");
 
     sync_ = std::make_shared<message_filters::Synchronizer<SyncPolicy>>(
@@ -118,26 +118,26 @@ public:
 
 private:
   typedef message_filters::sync_policies::ExactTime<
-      std_msgs::msg::Header, std_msgs::msg::Header, std_msgs::msg::Header>
+      geometry_msgs::msg::PointStamped, geometry_msgs::msg::PointStamped, geometry_msgs::msg::PointStamped>
       SyncPolicy;
 
-  void callback(const std_msgs::msg::Header::ConstSharedPtr &msg1,
-                const std_msgs::msg::Header::ConstSharedPtr &msg2,
-                const std_msgs::msg::Header::ConstSharedPtr &msg3) {
+  void callback(const geometry_msgs::msg::PointStamped::ConstSharedPtr &msg1,
+                const geometry_msgs::msg::PointStamped::ConstSharedPtr &msg2,
+                const geometry_msgs::msg::PointStamped::ConstSharedPtr &msg3) {
     pmu_analyzer::ELAPSED_TIME_TIMESTAMP(
         session_name_, 0, true,
-        std::stoi(std::max({msg1->frame_id, msg2->frame_id, msg3->frame_id})));
+        std::stoi(std::max({msg1->header.frame_id, msg2->header.frame_id, msg3->header.frame_id})));
     RCLCPP_INFO(this->get_logger(),
                 "SyncSubscriber: msg1_index = %s, msg2_index = %s, msg3_index "
                 "= %s, sync_cb_index_ = %zu",
-                msg1->frame_id.c_str(), msg2->frame_id.c_str(),
-                msg3->frame_id.c_str(), sync_cb_index_);
+                msg1->header.frame_id.c_str(), msg2->header.frame_id.c_str(),
+                msg3->header.frame_id.c_str(), sync_cb_index_);
     sync_cb_index_++;
   }
 
-  std::shared_ptr<message_filters::Subscriber<std_msgs::msg::Header>> sub1_;
-  std::shared_ptr<message_filters::Subscriber<std_msgs::msg::Header>> sub2_;
-  std::shared_ptr<message_filters::Subscriber<std_msgs::msg::Header>> sub3_;
+  std::shared_ptr<message_filters::Subscriber<geometry_msgs::msg::PointStamped>> sub1_;
+  std::shared_ptr<message_filters::Subscriber<geometry_msgs::msg::PointStamped>> sub2_;
+  std::shared_ptr<message_filters::Subscriber<geometry_msgs::msg::PointStamped>> sub3_;
   std::shared_ptr<message_filters::Synchronizer<SyncPolicy>> sync_;
   size_t sync_cb_index_;
   std::string session_name_;
@@ -150,16 +150,16 @@ public:
       : Node("sync_subscriber"), sync_cb_index_(0),
         session_name_("sync_subscriber_subscribed") {
     sub1_ =
-        std::make_shared<message_filters::Subscriber<std_msgs::msg::Header>>(
+        std::make_shared<message_filters::Subscriber<geometry_msgs::msg::PointStamped>>(
             this, "topic1");
     sub2_ =
-        std::make_shared<message_filters::Subscriber<std_msgs::msg::Header>>(
+        std::make_shared<message_filters::Subscriber<geometry_msgs::msg::PointStamped>>(
             this, "topic2");
     sub3_ =
-        std::make_shared<message_filters::Subscriber<std_msgs::msg::Header>>(
+        std::make_shared<message_filters::Subscriber<geometry_msgs::msg::PointStamped>>(
             this, "topic3");
     sub4_ =
-        std::make_shared<message_filters::Subscriber<std_msgs::msg::Header>>(
+        std::make_shared<message_filters::Subscriber<geometry_msgs::msg::PointStamped>>(
             this, "topic4");
 
     sync_ = std::make_shared<message_filters::Synchronizer<SyncPolicy>>(
@@ -175,31 +175,31 @@ public:
 
 private:
   typedef message_filters::sync_policies::ExactTime<
-      std_msgs::msg::Header, std_msgs::msg::Header, std_msgs::msg::Header,
-      std_msgs::msg::Header>
+      geometry_msgs::msg::PointStamped, geometry_msgs::msg::PointStamped, geometry_msgs::msg::PointStamped,
+      geometry_msgs::msg::PointStamped>
       SyncPolicy;
 
-  void callback(const std_msgs::msg::Header::ConstSharedPtr &msg1,
-                const std_msgs::msg::Header::ConstSharedPtr &msg2,
-                const std_msgs::msg::Header::ConstSharedPtr &msg3,
-                const std_msgs::msg::Header::ConstSharedPtr &msg4) {
+  void callback(const geometry_msgs::msg::PointStamped::ConstSharedPtr &msg1,
+                const geometry_msgs::msg::PointStamped::ConstSharedPtr &msg2,
+                const geometry_msgs::msg::PointStamped::ConstSharedPtr &msg3,
+                const geometry_msgs::msg::PointStamped::ConstSharedPtr &msg4) {
     pmu_analyzer::ELAPSED_TIME_TIMESTAMP(
         session_name_, 0, true,
         std::stoi(std::max(
-            {msg1->frame_id, msg2->frame_id, msg3->frame_id, msg4->frame_id})));
+            {msg1->header.frame_id, msg2->header.frame_id, msg3->header.frame_id, msg4->header.frame_id})));
     RCLCPP_INFO(
         this->get_logger(),
         "SyncSubscriber: msg1_index = %s, msg2_index = %s, msg3_index = "
         "%s, msg4_index = %s, sync_cb_index_ = %zu",
-        msg1->frame_id.c_str(), msg2->frame_id.c_str(), msg3->frame_id.c_str(),
-        msg4->frame_id.c_str(), sync_cb_index_);
+        msg1->header.frame_id.c_str(), msg2->header.frame_id.c_str(), msg3->header.frame_id.c_str(),
+        msg4->header.frame_id.c_str(), sync_cb_index_);
     sync_cb_index_++;
   }
 
-  std::shared_ptr<message_filters::Subscriber<std_msgs::msg::Header>> sub1_;
-  std::shared_ptr<message_filters::Subscriber<std_msgs::msg::Header>> sub2_;
-  std::shared_ptr<message_filters::Subscriber<std_msgs::msg::Header>> sub3_;
-  std::shared_ptr<message_filters::Subscriber<std_msgs::msg::Header>> sub4_;
+  std::shared_ptr<message_filters::Subscriber<geometry_msgs::msg::PointStamped>> sub1_;
+  std::shared_ptr<message_filters::Subscriber<geometry_msgs::msg::PointStamped>> sub2_;
+  std::shared_ptr<message_filters::Subscriber<geometry_msgs::msg::PointStamped>> sub3_;
+  std::shared_ptr<message_filters::Subscriber<geometry_msgs::msg::PointStamped>> sub4_;
   std::shared_ptr<message_filters::Synchronizer<SyncPolicy>> sync_;
   size_t sync_cb_index_;
   std::string session_name_;

@@ -8,7 +8,7 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(std_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
 find_package(message_filters REQUIRED)
 
 # Add PMU analyzer - use prebuilt library
@@ -22,7 +22,7 @@ endif()
 
 # subscribe_publisher
 add_executable(subscribe_publisher src/subscribe_publisher.cpp)
-ament_target_dependencies(subscribe_publisher rclcpp std_msgs)
+ament_target_dependencies(subscribe_publisher rclcpp geometry_msgs)
 target_link_libraries(subscribe_publisher ${PMU_ANALYZER_LIB})
 set_target_properties(subscribe_publisher PROPERTIES
   BUILD_RPATH "${CMAKE_CURRENT_SOURCE_DIR}/external/pmu_analyzer/lib"
@@ -30,7 +30,7 @@ set_target_properties(subscribe_publisher PROPERTIES
 
 # sync_subscriber
 add_executable(sync_subscriber src/sync_subscriber.cpp)
-ament_target_dependencies(sync_subscriber rclcpp std_msgs message_filters)
+ament_target_dependencies(sync_subscriber rclcpp geometry_msgs message_filters)
 target_link_libraries(sync_subscriber ${PMU_ANALYZER_LIB})
 set_target_properties(sync_subscriber PROPERTIES
   BUILD_RPATH "${CMAKE_CURRENT_SOURCE_DIR}/external/pmu_analyzer/lib"
@@ -38,7 +38,7 @@ set_target_properties(sync_subscriber PROPERTIES
 
 # source_publisher
 add_executable(source_publisher src/source_publisher.cpp)
-ament_target_dependencies(source_publisher rclcpp std_msgs)
+ament_target_dependencies(source_publisher rclcpp geometry_msgs)
 
 # Install PMU analyzer library
 install(FILES ${PMU_ANALYZER_LIB}
