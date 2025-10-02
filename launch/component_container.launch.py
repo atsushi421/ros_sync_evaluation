@@ -1,8 +1,3 @@
-#!/usr/bin/env python3
-"""
-Launch file to run all nodes in a single process using component containers.
-"""
-
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from launch.substitutions import LaunchConfiguration
@@ -50,7 +45,7 @@ def launch_setup(context, *args, **kwargs):
         name='sync_evaluation_container',
         namespace='',
         package='rclcpp_components',
-        executable='component_container',
+        executable='component_container_mt',
         composable_node_descriptions=composable_nodes,
         output='screen',
     )
