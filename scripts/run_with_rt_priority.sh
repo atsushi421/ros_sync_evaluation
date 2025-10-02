@@ -12,7 +12,7 @@ NC='\033[0m' # No Color
 # Check if running with sufficient privileges
 if [ "$EUID" -ne 0 ]; then
 	echo -e "${RED}Error: This script must be run with sudo or as root${NC}"
-	echo "Usage: sudo $0 <num_publishers>"
+	echo "Usage: sudo $0 <num_publishers> [workspace_root]"
 	exit 1
 fi
 
@@ -20,17 +20,20 @@ fi
 if [ $# -lt 1 ]; then
 	echo -e "${RED}Error: Missing required arguments${NC}"
 	echo ""
-	echo "Usage: sudo $0 <num_publishers>"
+	echo "Usage: sudo $0 <num_publishers> [workspace_root]"
 	echo ""
 	echo "Arguments:"
 	echo "  num_publishers: Number of publishers to launch (1-4)"
+	echo "  workspace_root: Path to workspace (default: \$HOME/ros_sync_evaluation)"
 	echo ""
-	echo "Example:"
+	echo "Examples:"
 	echo "  sudo $0 3"
+	echo "  sudo $0 3 /home/atsushi/ros_sync_evaluation"
 	exit 1
 fi
 
 NUM_PUBLISHERS="$1"
+WORKSPACE_ROOT="${2:-$HOME/ros_sync_evaluation}"
 
 # Validate number of publishers
 if ! [[ "$NUM_PUBLISHERS" =~ ^[1-4]$ ]]; then
@@ -38,8 +41,13 @@ if ! [[ "$NUM_PUBLISHERS" =~ ^[1-4]$ ]]; then
 	exit 1
 fi
 
+# Validate workspace root
+if [ ! -d "$WORKSPACE_ROOT" ]; then
+	echo -e "${RED}Error: Workspace root directory not found: $WORKSPACE_ROOT${NC}"
+	exit 1
+fi
+
 # Source ROS 2 environment
-WORKSPACE_ROOT="/home/atsushi/ros_sync_evaluation"
 if [ -f "$WORKSPACE_ROOT/install/setup.bash" ]; then
 	source "$WORKSPACE_ROOT/install/setup.bash"
 	echo -e "${GREEN}Sourced ROS 2 workspace: $WORKSPACE_ROOT/install/setup.bash${NC}"
@@ -49,7 +57,7 @@ fi
 
 # Set PMU analyzer config file if not already set
 if [ -z "$PMU_ANALYZER_CONFIG_FILE" ]; then
-	CONFIG_FILE="/home/atsushi/ros_sync_evaluation/config/pmu_config.yaml"
+	CONFIG_FILE="$WORKSPACE_ROOT/config/pmu_config.yaml"
 
 	if [ -f "$CONFIG_FILE" ]; then
 		export PMU_ANALYZER_CONFIG_FILE="$CONFIG_FILE"
@@ -64,6 +72,7 @@ fi
 echo -e "${GREEN}========================================${NC}"
 echo -e "${GREEN}ROS 2 Sync Evaluation Launcher (Component Container)${NC}"
 echo -e "${GREEN}========================================${NC}"
+echo "  Workspace Root: $WORKSPACE_ROOT"
 echo "  Number of Publishers: $NUM_PUBLISHERS"
 echo "  Mode: Single Process (All Nodes in Component Container)"
 echo "  RT Priority: SCHED_FIFO 99"

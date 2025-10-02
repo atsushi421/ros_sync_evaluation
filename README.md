@@ -18,7 +18,7 @@ This package provides a parametric evaluation framework for `message_filters::sy
 ## Building
 
 ```bash
-cd /home/atsushi/ros_sync_evaluation
+cd ros_sync_evaluation
 colcon build
 source install/setup.bash
 ```
@@ -29,12 +29,12 @@ The recommended way to run the evaluation uses a single component container proc
 
 ```bash
 # Launch all nodes in single process with RT priority
-sudo scripts/run_with_rt_priority.sh <num_publishers>
+sudo scripts/run_with_rt_priority.sh <num_publishers> <absolute_path_to_workspace>
 ```
 
 Example for 2 publishers:
 ```bash
-sudo scripts/run_with_rt_priority.sh 2
+sudo scripts/run_with_rt_priority.sh 2 /home/user/ros_sync_evaluation
 ```
 
 ## Visualization
