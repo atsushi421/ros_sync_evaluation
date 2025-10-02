@@ -1,0 +1,3 @@
+max_logs_num:
+  elapsed_time: 10000
+log_path: /home/atsushi/ros_sync_evaluation/pmu_analyzer_log
