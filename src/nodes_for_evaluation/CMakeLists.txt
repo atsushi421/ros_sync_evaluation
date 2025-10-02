@@ -11,6 +11,7 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_components REQUIRED)
 find_package(custom_msg REQUIRED)
 find_package(message_filters REQUIRED)
 
@@ -23,37 +24,35 @@ else()
     message(FATAL_ERROR "PMU analyzer library not found at ${PMU_ANALYZER_LIB}")
 endif()
 
-# subscribe_publisher
-add_executable(subscribe_publisher subscribe_publisher.cpp)
-ament_target_dependencies(subscribe_publisher rclcpp custom_msg)
-target_link_libraries(subscribe_publisher ${PMU_ANALYZER_LIB})
-set_target_properties(subscribe_publisher PROPERTIES
+# Component libraries
+add_library(source_publisher_component SHARED source_publisher.cpp)
+ament_target_dependencies(source_publisher_component rclcpp rclcpp_components custom_msg)
+rclcpp_components_register_nodes(source_publisher_component "SourcePublisher")
+
+add_library(subscribe_publisher_component SHARED subscribe_publisher.cpp)
+ament_target_dependencies(subscribe_publisher_component rclcpp rclcpp_components custom_msg)
+rclcpp_components_register_nodes(subscribe_publisher_component "SubscribePublisher")
+
+add_library(sync_subscriber_component SHARED sync_subscriber.cpp)
+ament_target_dependencies(sync_subscriber_component rclcpp rclcpp_components custom_msg message_filters)
+target_link_libraries(sync_subscriber_component ${PMU_ANALYZER_LIB})
+rclcpp_components_register_nodes(sync_subscriber_component "SyncSubscriber<1>;SyncSubscriber<2>;SyncSubscriber<3>;SyncSubscriber<4>")
+set_target_properties(sync_subscriber_component PROPERTIES
   BUILD_RPATH "${CMAKE_CURRENT_SOURCE_DIR}/../../external/pmu_analyzer/lib"
   INSTALL_RPATH "$ORIGIN/../lib:$ORIGIN/../../custom_msg/lib:${CMAKE_INSTALL_PREFIX}/lib")
 
-# sync_subscriber
-add_executable(sync_subscriber sync_subscriber.cpp)
-ament_target_dependencies(sync_subscriber rclcpp custom_msg message_filters)
-target_link_libraries(sync_subscriber ${PMU_ANALYZER_LIB})
-set_target_properties(sync_subscriber PROPERTIES
-  BUILD_RPATH "${CMAKE_CURRENT_SOURCE_DIR}/../../external/pmu_analyzer/lib"
-  INSTALL_RPATH "$ORIGIN/../lib:$ORIGIN/../../custom_msg/lib:${CMAKE_INSTALL_PREFIX}/lib")
-
-# source_publisher
-add_executable(source_publisher source_publisher.cpp)
-ament_target_dependencies(source_publisher rclcpp custom_msg)
-set_target_properties(source_publisher PROPERTIES
-  INSTALL_RPATH "$ORIGIN/../../custom_msg/lib:${CMAKE_INSTALL_PREFIX}/lib")
 
 # Install PMU analyzer library
 install(FILES ${PMU_ANALYZER_LIB}
   DESTINATION lib)
 
 install(TARGETS
-  subscribe_publisher
-  sync_subscriber
-  source_publisher
-  DESTINATION lib/${PROJECT_NAME})
+  source_publisher_component
+  subscribe_publisher_component
+  sync_subscriber_component
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin)
 
 install(DIRECTORY
   ../../launch

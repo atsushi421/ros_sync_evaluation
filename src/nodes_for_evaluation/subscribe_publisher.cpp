@@ -3,13 +3,14 @@
 #include <memory>
 #include <random>
 #include <rclcpp/rclcpp.hpp>
+#include <rclcpp_components/register_node_macro.hpp>
 
 using namespace std::chrono_literals;
 
 class SubscribePublisher : public rclcpp::Node {
 public:
-  SubscribePublisher()
-      : Node("subscribe_publisher"), rng_(std::random_device{}()),
+  explicit SubscribePublisher(const rclcpp::NodeOptions &options = rclcpp::NodeOptions())
+      : Node("subscribe_publisher", options), rng_(std::random_device{}()),
         dist_(10000, 10000000) {
     this->declare_parameter("topic_id", 1);
     topic_id_ = this->get_parameter("topic_id").as_int();
@@ -53,10 +54,4 @@ private:
   std::uniform_int_distribution<int> dist_;
 };
 
-int main(int argc, char *argv[]) {
-  rclcpp::init(argc, argv);
-  auto node = std::make_shared<SubscribePublisher>();
-  rclcpp::spin(node);
-  rclcpp::shutdown();
-  return 0;
-}
+RCLCPP_COMPONENTS_REGISTER_NODE(SubscribePublisher)

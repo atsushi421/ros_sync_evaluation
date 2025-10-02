@@ -45,3 +45,4 @@ install/
 log/
 .vscode/
 pmu_analyzer_log/
+*.pyc

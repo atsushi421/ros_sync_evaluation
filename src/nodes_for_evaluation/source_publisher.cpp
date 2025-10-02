@@ -2,12 +2,15 @@
 #include <custom_msg/msg/header_extra_stamp.hpp>
 #include <memory>
 #include <rclcpp/rclcpp.hpp>
+#include <rclcpp_components/register_node_macro.hpp>
 
 using namespace std::chrono_literals;
 
 class SourcePublisher : public rclcpp::Node {
 public:
-  SourcePublisher() : Node("source_publisher"), index_(0) {
+  explicit SourcePublisher(
+      const rclcpp::NodeOptions &options = rclcpp::NodeOptions())
+      : Node("source_publisher", options), index_(0) {
     publisher_ = this->create_publisher<custom_msg::msg::HeaderExtraStamp>(
         "start_topic", 1000);
     timer_ = this->create_wall_timer(
@@ -37,10 +40,4 @@ private:
   uint32_t index_;
 };
 
-int main(int argc, char *argv[]) {
-  rclcpp::init(argc, argv);
-  auto node = std::make_shared<SourcePublisher>();
-  rclcpp::spin(node);
-  rclcpp::shutdown();
-  return 0;
-}
+RCLCPP_COMPONENTS_REGISTER_NODE(SourcePublisher)

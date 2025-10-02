@@ -5,6 +5,7 @@
 #include <message_filters/synchronizer.h>
 #include <pmu_analyzer.hpp>
 #include <rclcpp/rclcpp.hpp>
+#include <rclcpp_components/register_node_macro.hpp>
 #include <vector>
 
 long long to_microseconds(const builtin_interfaces::msg::Time &t) {
@@ -19,8 +20,9 @@ template <int N> class SyncSubscriber;
 // subscriber)
 template <> class SyncSubscriber<1> : public rclcpp::Node {
 public:
-  SyncSubscriber()
-      : Node("sync_subscriber"), sync_cb_index_(0),
+  explicit SyncSubscriber(
+      const rclcpp::NodeOptions &options = rclcpp::NodeOptions())
+      : Node("sync_subscriber", options), sync_cb_index_(0),
         session_name_("sync_subscriber_subscribed") {
     sub1_ = this->create_subscription<custom_msg::msg::HeaderExtraStamp>(
         "topic1", 1000,
@@ -49,8 +51,9 @@ private:
 // Specialization for 2 publishers
 template <> class SyncSubscriber<2> : public rclcpp::Node {
 public:
-  SyncSubscriber()
-      : Node("sync_subscriber"), sync_cb_index_(0),
+  explicit SyncSubscriber(
+      const rclcpp::NodeOptions &options = rclcpp::NodeOptions())
+      : Node("sync_subscriber", options), sync_cb_index_(0),
         session_name_("sync_subscriber_subscribed") {
     sub1_ = std::make_shared<
         message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
@@ -103,8 +106,9 @@ private:
 // Specialization for 3 publishers
 template <> class SyncSubscriber<3> : public rclcpp::Node {
 public:
-  SyncSubscriber()
-      : Node("sync_subscriber"), sync_cb_index_(0),
+  explicit SyncSubscriber(
+      const rclcpp::NodeOptions &options = rclcpp::NodeOptions())
+      : Node("sync_subscriber", options), sync_cb_index_(0),
         session_name_("sync_subscriber_subscribed") {
     sub1_ = std::make_shared<
         message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
@@ -166,8 +170,9 @@ private:
 // Specialization for 4 publishers
 template <> class SyncSubscriber<4> : public rclcpp::Node {
 public:
-  SyncSubscriber()
-      : Node("sync_subscriber"), sync_cb_index_(0),
+  explicit SyncSubscriber(
+      const rclcpp::NodeOptions &options = rclcpp::NodeOptions())
+      : Node("sync_subscriber", options), sync_cb_index_(0),
         session_name_("sync_subscriber_subscribed") {
     sub1_ = std::make_shared<
         message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
@@ -236,39 +241,23 @@ private:
   std::string session_name_;
 };
 
-int main(int argc, char *argv[]) {
-  rclcpp::init(argc, argv);
-
-  // Get number of publishers from command line argument or ROS parameter
-  int num_publishers = 2; // default
-
-  if (argc > 1) {
-    num_publishers = std::atoi(argv[1]);
+// Wrapper component that creates the appropriate template instance
+class SyncSubscriberComponent : public rclcpp::Node {
+public:
+  explicit SyncSubscriberComponent(
+      const rclcpp::NodeOptions &options = rclcpp::NodeOptions())
+      : Node("sync_subscriber_wrapper", options) {
+    // This node is just a placeholder - the real work is done by registering
+    // the template specializations
+    RCLCPP_WARN(this->get_logger(),
+                "SyncSubscriberComponent is a placeholder. Use "
+                "SyncSubscriber1, SyncSubscriber2, SyncSubscriber3, or "
+                "SyncSubscriber4 instead.");
   }
+};
 
-  std::shared_ptr<rclcpp::Node> node;
-
-  switch (num_publishers) {
-  case 1:
-    node = std::make_shared<SyncSubscriber<1>>();
-    break;
-  case 2:
-    node = std::make_shared<SyncSubscriber<2>>();
-    break;
-  case 3:
-    node = std::make_shared<SyncSubscriber<3>>();
-    break;
-  case 4:
-    node = std::make_shared<SyncSubscriber<4>>();
-    break;
-  default:
-    RCLCPP_ERROR(rclcpp::get_logger("rclcpp"),
-                 "Unsupported number of publishers: %d. Supported: 1-4",
-                 num_publishers);
-    return 1;
-  }
-
-  rclcpp::spin(node);
-  rclcpp::shutdown();
-  return 0;
-}
+// Register each template specialization as a separate component
+RCLCPP_COMPONENTS_REGISTER_NODE(SyncSubscriber<1>)
+RCLCPP_COMPONENTS_REGISTER_NODE(SyncSubscriber<2>)
+RCLCPP_COMPONENTS_REGISTER_NODE(SyncSubscriber<3>)
+RCLCPP_COMPONENTS_REGISTER_NODE(SyncSubscriber<4>)
