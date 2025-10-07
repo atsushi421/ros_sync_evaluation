@@ -9,12 +9,13 @@ def parse_log_file(log_file_path):
     Parse the PMU analyzer log file.
 
     Format: <session_name> <counter_id> <index> <timestamp1> <timestamp2>
+    Note: Timestamps are in microseconds
 
     Returns:
-        tuple: (indices, latencies_ns, latencies_us)
+        tuple: (indices, latencies_us, latencies_ms)
     """
     indices = []
-    latencies_ns = []
+    latencies_us = []
 
     with open(log_file_path, 'r') as f:
         for line in f:
@@ -26,12 +27,12 @@ def parse_log_file(log_file_path):
                 latency = timestamp1 - timestamp2
 
                 indices.append(index)
-                latencies_ns.append(latency)
+                latencies_us.append(latency)
 
-    # Convert to microseconds
-    latencies_us = [lat / 1000.0 for lat in latencies_ns]
+    # Convert to milliseconds
+    latencies_ms = [lat / 1000.0 for lat in latencies_us]
 
-    return indices, latencies_ns, latencies_us
+    return indices, latencies_us, latencies_ms
 
 
 def plot_latency(indices, latencies_us, log_file_path, output_path=None):
@@ -96,22 +97,22 @@ def plot_latency(indices, latencies_us, log_file_path, output_path=None):
         plt.show()
 
 
-def print_statistics(indices, latencies_ns, latencies_us):
+def print_statistics(indices, latencies_us, latencies_ms):
     """Print latency statistics to console."""
     print("\n=== Latency Statistics ===")
     print(f"Total samples:     {len(latencies_us)}")
-    print(f"\nLatency (nanoseconds):")
-    print(f"  Min:     {np.min(latencies_ns):12.0f} ns")
-    print(f"  Max:     {np.max(latencies_ns):12.0f} ns")
-    print(f"  Mean:    {np.mean(latencies_ns):12.2f} ns")
-    print(f"  Median:  {np.median(latencies_ns):12.2f} ns")
-    print(f"  Std Dev: {np.std(latencies_ns):12.2f} ns")
     print(f"\nLatency (microseconds):")
-    print(f"  Min:     {np.min(latencies_us):12.2f} μs")
-    print(f"  Max:     {np.max(latencies_us):12.2f} μs")
+    print(f"  Min:     {np.min(latencies_us):12.0f} μs")
+    print(f"  Max:     {np.max(latencies_us):12.0f} μs")
     print(f"  Mean:    {np.mean(latencies_us):12.2f} μs")
     print(f"  Median:  {np.median(latencies_us):12.2f} μs")
     print(f"  Std Dev: {np.std(latencies_us):12.2f} μs")
+    print(f"\nLatency (milliseconds):")
+    print(f"  Min:     {np.min(latencies_ms):12.2f} ms")
+    print(f"  Max:     {np.max(latencies_ms):12.2f} ms")
+    print(f"  Mean:    {np.mean(latencies_ms):12.2f} ms")
+    print(f"  Median:  {np.median(latencies_ms):12.2f} ms")
+    print(f"  Std Dev: {np.std(latencies_ms):12.2f} ms")
 
     # Percentiles
     p50 = np.percentile(latencies_us, 50)
@@ -145,7 +146,7 @@ def main():
         return 1
 
     print(f"Reading log file: {log_file}")
-    indices, latencies_ns, latencies_us = parse_log_file(log_file)
+    indices, latencies_us, latencies_ms = parse_log_file(log_file)
 
     if len(indices) == 0:
         print("Error: No data found in log file")
@@ -154,7 +155,7 @@ def main():
     print(f"Loaded {len(indices)} samples")
 
     # Print statistics
-    print_statistics(indices, latencies_ns, latencies_us)
+    print_statistics(indices, latencies_us, latencies_ms)
 
     # Plot if requested
     if not args.no_plot:
