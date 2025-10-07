@@ -9,6 +9,7 @@ def launch_setup(context, *args, **kwargs):
     # Get the number of publishers from launch configuration
     num_publishers = int(LaunchConfiguration('num_publishers').perform(context))
     sync_policy = LaunchConfiguration('sync_policy').perform(context)
+    max_interval_duration = float(LaunchConfiguration('max_interval_duration').perform(context))
 
     # Create composable nodes list
     composable_nodes = [
@@ -38,7 +39,10 @@ def launch_setup(context, *args, **kwargs):
             package='nodes_for_evaluation',
             plugin=sync_plugin,
             name='sync_subscriber',
-            parameters=[{'sync_policy': sync_policy}],
+            parameters=[{
+                'sync_policy': sync_policy,
+                'max_interval_duration': max_interval_duration
+            }],
         )
     )
 
@@ -69,8 +73,15 @@ def generate_launch_description():
         description='Synchronization policy: "exact" or "approximate"'
     )
 
+    max_interval_duration_arg = DeclareLaunchArgument(
+        'max_interval_duration',
+        default_value='100.0',
+        description='Maximum time interval for approximate synchronization (milliseconds)'
+    )
+
     return LaunchDescription([
         num_publishers_arg,
         sync_policy_arg,
+        max_interval_duration_arg,
         OpaqueFunction(function=launch_setup),
     ])

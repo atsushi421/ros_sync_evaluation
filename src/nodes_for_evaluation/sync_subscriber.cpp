@@ -61,7 +61,9 @@ public:
         session_name_("sync_subscriber_subscribed") {
     // Declare and get sync policy parameter
     this->declare_parameter<std::string>("sync_policy", "exact");
+    this->declare_parameter<double>("max_interval_duration", 100.0);
     std::string sync_policy = this->get_parameter("sync_policy").as_string();
+    double max_interval_ms = this->get_parameter("max_interval_duration").as_double();
 
     sub1_ = std::make_shared<
         message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
@@ -73,11 +75,11 @@ public:
     if (sync_policy == "approximate") {
       sync_approx_ = std::make_shared<message_filters::Synchronizer<ApproxSyncPolicy>>(
           ApproxSyncPolicy(1000), *sub1_, *sub2_);
-      sync_approx_->setMaxIntervalDuration(rclcpp::Duration::from_seconds(0.1));
+      sync_approx_->setMaxIntervalDuration(rclcpp::Duration::from_nanoseconds(static_cast<int64_t>(max_interval_ms * 1e6)));
       sync_approx_->registerCallback(std::bind(&SyncSubscriber<2>::callback, this,
                                         std::placeholders::_1,
                                         std::placeholders::_2));
-      RCLCPP_INFO(this->get_logger(), "Using ApproximateTime sync policy");
+      RCLCPP_INFO(this->get_logger(), "Using ApproximateTime sync policy (max_interval: %.1fms)", max_interval_ms);
     } else {
       sync_exact_ = std::make_shared<message_filters::Synchronizer<ExactSyncPolicy>>(
           ExactSyncPolicy(1000), *sub1_, *sub2_);
@@ -135,7 +137,9 @@ public:
         session_name_("sync_subscriber_subscribed") {
     // Declare and get sync policy parameter
     this->declare_parameter<std::string>("sync_policy", "exact");
+    this->declare_parameter<double>("max_interval_duration", 100.0);
     std::string sync_policy = this->get_parameter("sync_policy").as_string();
+    double max_interval_ms = this->get_parameter("max_interval_duration").as_double();
 
     sub1_ = std::make_shared<
         message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
@@ -150,11 +154,11 @@ public:
     if (sync_policy == "approximate") {
       sync_approx_ = std::make_shared<message_filters::Synchronizer<ApproxSyncPolicy>>(
           ApproxSyncPolicy(1000), *sub1_, *sub2_, *sub3_);
-      sync_approx_->setMaxIntervalDuration(rclcpp::Duration::from_seconds(0.1));
+      sync_approx_->setMaxIntervalDuration(rclcpp::Duration::from_nanoseconds(static_cast<int64_t>(max_interval_ms * 1e6)));
       sync_approx_->registerCallback(
           std::bind(&SyncSubscriber<3>::callback, this, std::placeholders::_1,
                     std::placeholders::_2, std::placeholders::_3));
-      RCLCPP_INFO(this->get_logger(), "Using ApproximateTime sync policy");
+      RCLCPP_INFO(this->get_logger(), "Using ApproximateTime sync policy (max_interval: %.1fms)", max_interval_ms);
     } else {
       sync_exact_ = std::make_shared<message_filters::Synchronizer<ExactSyncPolicy>>(
           ExactSyncPolicy(1000), *sub1_, *sub2_, *sub3_);
@@ -219,7 +223,9 @@ public:
         session_name_("sync_subscriber_subscribed") {
     // Declare and get sync policy parameter
     this->declare_parameter<std::string>("sync_policy", "exact");
+    this->declare_parameter<double>("max_interval_duration", 100.0);
     std::string sync_policy = this->get_parameter("sync_policy").as_string();
+    double max_interval_ms = this->get_parameter("max_interval_duration").as_double();
 
     sub1_ = std::make_shared<
         message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
@@ -237,11 +243,11 @@ public:
     if (sync_policy == "approximate") {
       sync_approx_ = std::make_shared<message_filters::Synchronizer<ApproxSyncPolicy>>(
           ApproxSyncPolicy(1000), *sub1_, *sub2_, *sub3_, *sub4_);
-      sync_approx_->setMaxIntervalDuration(rclcpp::Duration::from_seconds(0.1));
+      sync_approx_->setMaxIntervalDuration(rclcpp::Duration::from_nanoseconds(static_cast<int64_t>(max_interval_ms * 1e6)));
       sync_approx_->registerCallback(std::bind(
           &SyncSubscriber<4>::callback, this, std::placeholders::_1,
           std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
-      RCLCPP_INFO(this->get_logger(), "Using ApproximateTime sync policy");
+      RCLCPP_INFO(this->get_logger(), "Using ApproximateTime sync policy (max_interval: %.1fms)", max_interval_ms);
     } else {
       sync_exact_ = std::make_shared<message_filters::Synchronizer<ExactSyncPolicy>>(
           ExactSyncPolicy(1000), *sub1_, *sub2_, *sub3_, *sub4_);
@@ -313,7 +319,9 @@ public:
         session_name_("sync_subscriber_subscribed") {
     // Declare and get sync policy parameter
     this->declare_parameter<std::string>("sync_policy", "exact");
+    this->declare_parameter<double>("max_interval_duration", 100.0);
     std::string sync_policy = this->get_parameter("sync_policy").as_string();
+    double max_interval_ms = this->get_parameter("max_interval_duration").as_double();
 
     sub1_ = std::make_shared<
         message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
@@ -334,12 +342,12 @@ public:
     if (sync_policy == "approximate") {
       sync_approx_ = std::make_shared<message_filters::Synchronizer<ApproxSyncPolicy>>(
           ApproxSyncPolicy(1000), *sub1_, *sub2_, *sub3_, *sub4_, *sub5_);
-      sync_approx_->setMaxIntervalDuration(rclcpp::Duration::from_seconds(0.1));
+      sync_approx_->setMaxIntervalDuration(rclcpp::Duration::from_nanoseconds(static_cast<int64_t>(max_interval_ms * 1e6)));
       sync_approx_->registerCallback(std::bind(
           &SyncSubscriber<5>::callback, this, std::placeholders::_1,
           std::placeholders::_2, std::placeholders::_3, std::placeholders::_4,
           std::placeholders::_5));
-      RCLCPP_INFO(this->get_logger(), "Using ApproximateTime sync policy");
+      RCLCPP_INFO(this->get_logger(), "Using ApproximateTime sync policy (max_interval: %.1fms)", max_interval_ms);
     } else {
       sync_exact_ = std::make_shared<message_filters::Synchronizer<ExactSyncPolicy>>(
           ExactSyncPolicy(1000), *sub1_, *sub2_, *sub3_, *sub4_, *sub5_);
@@ -419,7 +427,9 @@ public:
         session_name_("sync_subscriber_subscribed") {
     // Declare and get sync policy parameter
     this->declare_parameter<std::string>("sync_policy", "exact");
+    this->declare_parameter<double>("max_interval_duration", 100.0);
     std::string sync_policy = this->get_parameter("sync_policy").as_string();
+    double max_interval_ms = this->get_parameter("max_interval_duration").as_double();
 
     sub1_ = std::make_shared<
         message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
@@ -443,12 +453,12 @@ public:
     if (sync_policy == "approximate") {
       sync_approx_ = std::make_shared<message_filters::Synchronizer<ApproxSyncPolicy>>(
           ApproxSyncPolicy(1000), *sub1_, *sub2_, *sub3_, *sub4_, *sub5_, *sub6_);
-      sync_approx_->setMaxIntervalDuration(rclcpp::Duration::from_seconds(0.1));
+      sync_approx_->setMaxIntervalDuration(rclcpp::Duration::from_nanoseconds(static_cast<int64_t>(max_interval_ms * 1e6)));
       sync_approx_->registerCallback(std::bind(
           &SyncSubscriber<6>::callback, this, std::placeholders::_1,
           std::placeholders::_2, std::placeholders::_3, std::placeholders::_4,
           std::placeholders::_5, std::placeholders::_6));
-      RCLCPP_INFO(this->get_logger(), "Using ApproximateTime sync policy");
+      RCLCPP_INFO(this->get_logger(), "Using ApproximateTime sync policy (max_interval: %.1fms)", max_interval_ms);
     } else {
       sync_exact_ = std::make_shared<message_filters::Synchronizer<ExactSyncPolicy>>(
           ExactSyncPolicy(1000), *sub1_, *sub2_, *sub3_, *sub4_, *sub5_, *sub6_);
@@ -535,7 +545,9 @@ public:
         session_name_("sync_subscriber_subscribed") {
     // Declare and get sync policy parameter
     this->declare_parameter<std::string>("sync_policy", "exact");
+    this->declare_parameter<double>("max_interval_duration", 100.0);
     std::string sync_policy = this->get_parameter("sync_policy").as_string();
+    double max_interval_ms = this->get_parameter("max_interval_duration").as_double();
 
     sub1_ = std::make_shared<
         message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
@@ -563,12 +575,12 @@ public:
       sync_approx_ = std::make_shared<message_filters::Synchronizer<ApproxSyncPolicy>>(
           ApproxSyncPolicy(1000), *sub1_, *sub2_, *sub3_, *sub4_, *sub5_, *sub6_,
           *sub7_);
-      sync_approx_->setMaxIntervalDuration(rclcpp::Duration::from_seconds(0.1));
+      sync_approx_->setMaxIntervalDuration(rclcpp::Duration::from_nanoseconds(static_cast<int64_t>(max_interval_ms * 1e6)));
       sync_approx_->registerCallback(std::bind(
           &SyncSubscriber<7>::callback, this, std::placeholders::_1,
           std::placeholders::_2, std::placeholders::_3, std::placeholders::_4,
           std::placeholders::_5, std::placeholders::_6, std::placeholders::_7));
-      RCLCPP_INFO(this->get_logger(), "Using ApproximateTime sync policy");
+      RCLCPP_INFO(this->get_logger(), "Using ApproximateTime sync policy (max_interval: %.1fms)", max_interval_ms);
     } else {
       sync_exact_ = std::make_shared<message_filters::Synchronizer<ExactSyncPolicy>>(
           ExactSyncPolicy(1000), *sub1_, *sub2_, *sub3_, *sub4_, *sub5_, *sub6_,
@@ -663,7 +675,9 @@ public:
         session_name_("sync_subscriber_subscribed") {
     // Declare and get sync policy parameter
     this->declare_parameter<std::string>("sync_policy", "exact");
+    this->declare_parameter<double>("max_interval_duration", 100.0);
     std::string sync_policy = this->get_parameter("sync_policy").as_string();
+    double max_interval_ms = this->get_parameter("max_interval_duration").as_double();
 
     sub1_ = std::make_shared<
         message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
@@ -694,13 +708,13 @@ public:
       sync_approx_ = std::make_shared<message_filters::Synchronizer<ApproxSyncPolicy>>(
           ApproxSyncPolicy(1000), *sub1_, *sub2_, *sub3_, *sub4_, *sub5_, *sub6_,
           *sub7_, *sub8_);
-      sync_approx_->setMaxIntervalDuration(rclcpp::Duration::from_seconds(0.1));
+      sync_approx_->setMaxIntervalDuration(rclcpp::Duration::from_nanoseconds(static_cast<int64_t>(max_interval_ms * 1e6)));
       sync_approx_->registerCallback(std::bind(
           &SyncSubscriber<8>::callback, this, std::placeholders::_1,
           std::placeholders::_2, std::placeholders::_3, std::placeholders::_4,
           std::placeholders::_5, std::placeholders::_6, std::placeholders::_7,
           std::placeholders::_8));
-      RCLCPP_INFO(this->get_logger(), "Using ApproximateTime sync policy");
+      RCLCPP_INFO(this->get_logger(), "Using ApproximateTime sync policy (max_interval: %.1fms)", max_interval_ms);
     } else {
       sync_exact_ = std::make_shared<message_filters::Synchronizer<ExactSyncPolicy>>(
           ExactSyncPolicy(1000), *sub1_, *sub2_, *sub3_, *sub4_, *sub5_, *sub6_,
