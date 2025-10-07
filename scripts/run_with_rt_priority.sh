@@ -102,6 +102,37 @@ cleanup() {
 	fi
 	wait
 	echo -e "${GREEN}All nodes stopped${NC}"
+
+	sleep 2 # Wait for log files to be written
+
+	# Rename elapsed_time_log files after execution
+	echo ""
+	echo -e "${BLUE}Renaming elapsed_time_log files...${NC}"
+
+	# Find all elapsed_time_log files in the workspace
+	for log_file in "$WORKSPACE_ROOT"/pmu_analyzer_log/elapsed_time_log_*; do
+		if [ -f "$log_file" ]; then
+			# Extract the base filename
+			base_name=$(basename "$log_file")
+
+			# Create new filename with sync_policy, max_interval_duration, and num_publishers
+			# Format: <sync_policy><max_interval_duration>_<num_publishers>
+			new_name="${SYNC_POLICY}${MAX_INTERVAL_DURATION}_${NUM_PUBLISHERS}"
+
+			# Replace elapsed_time_log_xxx with the new name
+			new_file="${log_file%/*}/$(echo "$base_name" | sed "s/elapsed_time_log_[^.]*/${new_name}/")"
+
+			# Rename the file
+			if mv "$log_file" "$new_file"; then
+				echo -e "${GREEN}  Renamed: $(basename "$log_file") -> $(basename "$new_file")${NC}"
+			else
+				echo -e "${YELLOW}  Warning: Failed to rename $log_file${NC}"
+			fi
+		fi
+	done
+
+	echo -e "${GREEN}Log file renaming complete${NC}"
+
 	exit 0
 }
 
