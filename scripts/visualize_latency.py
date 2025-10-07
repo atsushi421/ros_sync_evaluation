@@ -8,22 +8,41 @@ def parse_log_file(log_file_path):
     """
     Parse the PMU analyzer log file.
 
-    Format: <session_name> <counter_id> <index> <timestamp1> <timestamp2>
-    Note: Timestamps are in microseconds
+    Two formats are supported:
+    1. PMU elapsed time log: <session_name> <counter_id> <index> <timestamp1> <timestamp2>
+       - Timestamps are in microseconds
+       - Latency is calculated as: timestamp1 - timestamp2
+
+    2. ICE latency log (latency_log_ice_*): Single value per line
+       - Each line contains latency in nanoseconds
+       - Latency is converted to microseconds (ns / 1000)
 
     Returns:
         list: latencies_us (list of latencies in microseconds)
     """
     latencies_us = []
+    filename = Path(log_file_path).name
+    is_ice_latency_log = filename.startswith('latency_log_ice_')
 
     with open(log_file_path, 'r') as f:
         for line in f:
             parts = line.strip().split()
-            if len(parts) >= 5:
-                timestamp1 = int(parts[3])
-                timestamp2 = int(parts[4])
-                latency = timestamp1 - timestamp2
-                latencies_us.append(latency)
+            if not parts:
+                continue
+
+            if is_ice_latency_log:
+                # For ICE latency logs, each line contains a single latency value in nanoseconds
+                if len(parts) >= 1:
+                    latency_ns = int(parts[0])
+                    latency_us = latency_ns / 1000.0
+                    latencies_us.append(latency_us)
+            else:
+                # For PMU elapsed time logs, calculate difference between timestamps
+                if len(parts) >= 5:
+                    timestamp1 = int(parts[3])
+                    timestamp2 = int(parts[4])
+                    latency = timestamp1 - timestamp2
+                    latencies_us.append(latency)
 
     return latencies_us[1:]  # filter first data
 
@@ -32,12 +51,19 @@ def extract_label_from_filename(filename):
     """
     Extract a readable label from the log filename.
 
-    Expected format: <sync_policy><max_interval_duration>_<num_publishers>
-    Examples: exact50_3, approximate100_4
+    Expected formats:
+    1. <sync_policy><max_interval_duration>_<num_publishers>
+       Examples: exact50_3, approximate100_4
+    2. latency_log_ice_<config>
+       Examples: latency_log_ice_exact50_3
 
     Returns a formatted label for the plot.
     """
     name = Path(filename).stem  # Remove extension
+
+    # Handle ICE latency logs
+    if name.startswith('latency_log_ice_'):
+        name = name.replace('latency_log_ice_', '')
 
     # Try to parse the filename
     if 'exact' in name:
