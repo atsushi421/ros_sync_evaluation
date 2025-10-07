@@ -12,7 +12,7 @@ public:
   explicit SubscribePublisher(
       const rclcpp::NodeOptions &options = rclcpp::NodeOptions())
       : Node("subscribe_publisher", options), rng_(std::random_device{}()),
-        dist_(10000, 10000000) {
+        dist_(1000, 50000) {
     this->declare_parameter("topic_id", 1);
     topic_id_ = this->get_parameter("topic_id").as_int();
     std::string topic_name = "topic" + std::to_string(topic_id_);
@@ -26,10 +26,18 @@ public:
   }
 
 private:
-  void pseudo_processing(int iterations) {
-    volatile double result = 0.0;
-    for (int i = 0; i < iterations; ++i) {
-      result += std::sin(i) * std::cos(i);
+  void wait_microsec(uint64_t usec) {
+    using clock = std::chrono::steady_clock;
+    const auto start = clock::now();
+
+    while (true) {
+      auto now = clock::now();
+      auto diff =
+          std::chrono::duration_cast<std::chrono::microseconds>(now - start)
+              .count();
+
+      if (diff >= static_cast<long long>(usec))
+        break;
     }
   }
 
@@ -38,9 +46,9 @@ private:
     RCLCPP_INFO(this->get_logger(), "SubscribePublisher %d: %u", topic_id_,
                 index);
 
-    // Random pseudo processing (10000-10000000 iterations)
+    // Random pseudo processing (1000-50000 us)
     int iterations = dist_(rng_);
-    pseudo_processing(iterations);
+    wait_microsec(iterations);
 
     msg->extra_stamp = this->now();
     publisher_->publish(*msg);
