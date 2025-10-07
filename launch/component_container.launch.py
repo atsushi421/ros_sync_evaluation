@@ -58,7 +58,7 @@ def generate_launch_description():
     num_publishers_arg = DeclareLaunchArgument(
         'num_publishers',
         default_value='2',
-        description='Number of publishers (1-4)'
+        description='Number of publishers (1-8)'
     )
 
     return LaunchDescription([

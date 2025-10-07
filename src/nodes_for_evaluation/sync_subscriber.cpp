@@ -241,8 +241,408 @@ private:
   std::string session_name_;
 };
 
+// Specialization for 5 publishers
+template <> class SyncSubscriber<5> : public rclcpp::Node {
+public:
+  explicit SyncSubscriber(
+      const rclcpp::NodeOptions &options = rclcpp::NodeOptions())
+      : Node("sync_subscriber", options), sync_cb_index_(0),
+        session_name_("sync_subscriber_subscribed") {
+    sub1_ = std::make_shared<
+        message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
+        this, "topic1");
+    sub2_ = std::make_shared<
+        message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
+        this, "topic2");
+    sub3_ = std::make_shared<
+        message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
+        this, "topic3");
+    sub4_ = std::make_shared<
+        message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
+        this, "topic4");
+    sub5_ = std::make_shared<
+        message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
+        this, "topic5");
+
+    sync_ = std::make_shared<message_filters::Synchronizer<SyncPolicy>>(
+        SyncPolicy(1000), *sub1_, *sub2_, *sub3_, *sub4_, *sub5_);
+    sync_->registerCallback(std::bind(
+        &SyncSubscriber<5>::callback, this, std::placeholders::_1,
+        std::placeholders::_2, std::placeholders::_3, std::placeholders::_4,
+        std::placeholders::_5));
+
+    pmu_analyzer::ELAPSED_TIME_INIT(session_name_);
+  }
+
+  ~SyncSubscriber() { pmu_analyzer::ELAPSED_TIME_CLOSE(session_name_); }
+
+private:
+  typedef message_filters::sync_policies::ExactTime<
+      custom_msg::msg::HeaderExtraStamp, custom_msg::msg::HeaderExtraStamp,
+      custom_msg::msg::HeaderExtraStamp, custom_msg::msg::HeaderExtraStamp,
+      custom_msg::msg::HeaderExtraStamp>
+      SyncPolicy;
+
+  void callback(const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg1,
+                const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg2,
+                const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg3,
+                const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg4,
+                const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg5) {
+    pmu_analyzer::ELAPSED_TIME_TIMESTAMP(
+        session_name_, 0, true,
+        std::max({to_microseconds(msg1->extra_stamp),
+                  to_microseconds(msg2->extra_stamp),
+                  to_microseconds(msg3->extra_stamp),
+                  to_microseconds(msg4->extra_stamp),
+                  to_microseconds(msg5->extra_stamp)}));
+    RCLCPP_INFO(
+        this->get_logger(),
+        "SyncSubscriber: msg1_index = %s, msg2_index = %s, msg3_index = "
+        "%s, msg4_index = %s, msg5_index = %s, sync_cb_index_ = %zu",
+        msg1->header.frame_id.c_str(), msg2->header.frame_id.c_str(),
+        msg3->header.frame_id.c_str(), msg4->header.frame_id.c_str(),
+        msg5->header.frame_id.c_str(), sync_cb_index_);
+    sync_cb_index_++;
+  }
+
+  std::shared_ptr<
+      message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>
+      sub1_;
+  std::shared_ptr<
+      message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>
+      sub2_;
+  std::shared_ptr<
+      message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>
+      sub3_;
+  std::shared_ptr<
+      message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>
+      sub4_;
+  std::shared_ptr<
+      message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>
+      sub5_;
+  std::shared_ptr<message_filters::Synchronizer<SyncPolicy>> sync_;
+  size_t sync_cb_index_;
+  std::string session_name_;
+};
+
+// Specialization for 6 publishers
+template <> class SyncSubscriber<6> : public rclcpp::Node {
+public:
+  explicit SyncSubscriber(
+      const rclcpp::NodeOptions &options = rclcpp::NodeOptions())
+      : Node("sync_subscriber", options), sync_cb_index_(0),
+        session_name_("sync_subscriber_subscribed") {
+    sub1_ = std::make_shared<
+        message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
+        this, "topic1");
+    sub2_ = std::make_shared<
+        message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
+        this, "topic2");
+    sub3_ = std::make_shared<
+        message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
+        this, "topic3");
+    sub4_ = std::make_shared<
+        message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
+        this, "topic4");
+    sub5_ = std::make_shared<
+        message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
+        this, "topic5");
+    sub6_ = std::make_shared<
+        message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
+        this, "topic6");
+
+    sync_ = std::make_shared<message_filters::Synchronizer<SyncPolicy>>(
+        SyncPolicy(1000), *sub1_, *sub2_, *sub3_, *sub4_, *sub5_, *sub6_);
+    sync_->registerCallback(std::bind(
+        &SyncSubscriber<6>::callback, this, std::placeholders::_1,
+        std::placeholders::_2, std::placeholders::_3, std::placeholders::_4,
+        std::placeholders::_5, std::placeholders::_6));
+
+    pmu_analyzer::ELAPSED_TIME_INIT(session_name_);
+  }
+
+  ~SyncSubscriber() { pmu_analyzer::ELAPSED_TIME_CLOSE(session_name_); }
+
+private:
+  typedef message_filters::sync_policies::ExactTime<
+      custom_msg::msg::HeaderExtraStamp, custom_msg::msg::HeaderExtraStamp,
+      custom_msg::msg::HeaderExtraStamp, custom_msg::msg::HeaderExtraStamp,
+      custom_msg::msg::HeaderExtraStamp, custom_msg::msg::HeaderExtraStamp>
+      SyncPolicy;
+
+  void callback(const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg1,
+                const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg2,
+                const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg3,
+                const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg4,
+                const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg5,
+                const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg6) {
+    pmu_analyzer::ELAPSED_TIME_TIMESTAMP(
+        session_name_, 0, true,
+        std::max({to_microseconds(msg1->extra_stamp),
+                  to_microseconds(msg2->extra_stamp),
+                  to_microseconds(msg3->extra_stamp),
+                  to_microseconds(msg4->extra_stamp),
+                  to_microseconds(msg5->extra_stamp),
+                  to_microseconds(msg6->extra_stamp)}));
+    RCLCPP_INFO(
+        this->get_logger(),
+        "SyncSubscriber: msg1_index = %s, msg2_index = %s, msg3_index = "
+        "%s, msg4_index = %s, msg5_index = %s, msg6_index = %s, "
+        "sync_cb_index_ = %zu",
+        msg1->header.frame_id.c_str(), msg2->header.frame_id.c_str(),
+        msg3->header.frame_id.c_str(), msg4->header.frame_id.c_str(),
+        msg5->header.frame_id.c_str(), msg6->header.frame_id.c_str(),
+        sync_cb_index_);
+    sync_cb_index_++;
+  }
+
+  std::shared_ptr<
+      message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>
+      sub1_;
+  std::shared_ptr<
+      message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>
+      sub2_;
+  std::shared_ptr<
+      message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>
+      sub3_;
+  std::shared_ptr<
+      message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>
+      sub4_;
+  std::shared_ptr<
+      message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>
+      sub5_;
+  std::shared_ptr<
+      message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>
+      sub6_;
+  std::shared_ptr<message_filters::Synchronizer<SyncPolicy>> sync_;
+  size_t sync_cb_index_;
+  std::string session_name_;
+};
+
+// Specialization for 7 publishers
+template <> class SyncSubscriber<7> : public rclcpp::Node {
+public:
+  explicit SyncSubscriber(
+      const rclcpp::NodeOptions &options = rclcpp::NodeOptions())
+      : Node("sync_subscriber", options), sync_cb_index_(0),
+        session_name_("sync_subscriber_subscribed") {
+    sub1_ = std::make_shared<
+        message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
+        this, "topic1");
+    sub2_ = std::make_shared<
+        message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
+        this, "topic2");
+    sub3_ = std::make_shared<
+        message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
+        this, "topic3");
+    sub4_ = std::make_shared<
+        message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
+        this, "topic4");
+    sub5_ = std::make_shared<
+        message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
+        this, "topic5");
+    sub6_ = std::make_shared<
+        message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
+        this, "topic6");
+    sub7_ = std::make_shared<
+        message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
+        this, "topic7");
+
+    sync_ = std::make_shared<message_filters::Synchronizer<SyncPolicy>>(
+        SyncPolicy(1000), *sub1_, *sub2_, *sub3_, *sub4_, *sub5_, *sub6_,
+        *sub7_);
+    sync_->registerCallback(std::bind(
+        &SyncSubscriber<7>::callback, this, std::placeholders::_1,
+        std::placeholders::_2, std::placeholders::_3, std::placeholders::_4,
+        std::placeholders::_5, std::placeholders::_6, std::placeholders::_7));
+
+    pmu_analyzer::ELAPSED_TIME_INIT(session_name_);
+  }
+
+  ~SyncSubscriber() { pmu_analyzer::ELAPSED_TIME_CLOSE(session_name_); }
+
+private:
+  typedef message_filters::sync_policies::ExactTime<
+      custom_msg::msg::HeaderExtraStamp, custom_msg::msg::HeaderExtraStamp,
+      custom_msg::msg::HeaderExtraStamp, custom_msg::msg::HeaderExtraStamp,
+      custom_msg::msg::HeaderExtraStamp, custom_msg::msg::HeaderExtraStamp,
+      custom_msg::msg::HeaderExtraStamp>
+      SyncPolicy;
+
+  void callback(const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg1,
+                const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg2,
+                const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg3,
+                const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg4,
+                const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg5,
+                const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg6,
+                const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg7) {
+    pmu_analyzer::ELAPSED_TIME_TIMESTAMP(
+        session_name_, 0, true,
+        std::max({to_microseconds(msg1->extra_stamp),
+                  to_microseconds(msg2->extra_stamp),
+                  to_microseconds(msg3->extra_stamp),
+                  to_microseconds(msg4->extra_stamp),
+                  to_microseconds(msg5->extra_stamp),
+                  to_microseconds(msg6->extra_stamp),
+                  to_microseconds(msg7->extra_stamp)}));
+    RCLCPP_INFO(
+        this->get_logger(),
+        "SyncSubscriber: msg1_index = %s, msg2_index = %s, msg3_index = "
+        "%s, msg4_index = %s, msg5_index = %s, msg6_index = %s, "
+        "msg7_index = %s, sync_cb_index_ = %zu",
+        msg1->header.frame_id.c_str(), msg2->header.frame_id.c_str(),
+        msg3->header.frame_id.c_str(), msg4->header.frame_id.c_str(),
+        msg5->header.frame_id.c_str(), msg6->header.frame_id.c_str(),
+        msg7->header.frame_id.c_str(), sync_cb_index_);
+    sync_cb_index_++;
+  }
+
+  std::shared_ptr<
+      message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>
+      sub1_;
+  std::shared_ptr<
+      message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>
+      sub2_;
+  std::shared_ptr<
+      message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>
+      sub3_;
+  std::shared_ptr<
+      message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>
+      sub4_;
+  std::shared_ptr<
+      message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>
+      sub5_;
+  std::shared_ptr<
+      message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>
+      sub6_;
+  std::shared_ptr<
+      message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>
+      sub7_;
+  std::shared_ptr<message_filters::Synchronizer<SyncPolicy>> sync_;
+  size_t sync_cb_index_;
+  std::string session_name_;
+};
+
+// Specialization for 8 publishers
+template <> class SyncSubscriber<8> : public rclcpp::Node {
+public:
+  explicit SyncSubscriber(
+      const rclcpp::NodeOptions &options = rclcpp::NodeOptions())
+      : Node("sync_subscriber", options), sync_cb_index_(0),
+        session_name_("sync_subscriber_subscribed") {
+    sub1_ = std::make_shared<
+        message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
+        this, "topic1");
+    sub2_ = std::make_shared<
+        message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
+        this, "topic2");
+    sub3_ = std::make_shared<
+        message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
+        this, "topic3");
+    sub4_ = std::make_shared<
+        message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
+        this, "topic4");
+    sub5_ = std::make_shared<
+        message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
+        this, "topic5");
+    sub6_ = std::make_shared<
+        message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
+        this, "topic6");
+    sub7_ = std::make_shared<
+        message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
+        this, "topic7");
+    sub8_ = std::make_shared<
+        message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
+        this, "topic8");
+
+    sync_ = std::make_shared<message_filters::Synchronizer<SyncPolicy>>(
+        SyncPolicy(1000), *sub1_, *sub2_, *sub3_, *sub4_, *sub5_, *sub6_,
+        *sub7_, *sub8_);
+    sync_->registerCallback(std::bind(
+        &SyncSubscriber<8>::callback, this, std::placeholders::_1,
+        std::placeholders::_2, std::placeholders::_3, std::placeholders::_4,
+        std::placeholders::_5, std::placeholders::_6, std::placeholders::_7,
+        std::placeholders::_8));
+
+    pmu_analyzer::ELAPSED_TIME_INIT(session_name_);
+  }
+
+  ~SyncSubscriber() { pmu_analyzer::ELAPSED_TIME_CLOSE(session_name_); }
+
+private:
+  typedef message_filters::sync_policies::ExactTime<
+      custom_msg::msg::HeaderExtraStamp, custom_msg::msg::HeaderExtraStamp,
+      custom_msg::msg::HeaderExtraStamp, custom_msg::msg::HeaderExtraStamp,
+      custom_msg::msg::HeaderExtraStamp, custom_msg::msg::HeaderExtraStamp,
+      custom_msg::msg::HeaderExtraStamp, custom_msg::msg::HeaderExtraStamp>
+      SyncPolicy;
+
+  void callback(const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg1,
+                const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg2,
+                const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg3,
+                const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg4,
+                const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg5,
+                const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg6,
+                const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg7,
+                const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg8) {
+    pmu_analyzer::ELAPSED_TIME_TIMESTAMP(
+        session_name_, 0, true,
+        std::max({to_microseconds(msg1->extra_stamp),
+                  to_microseconds(msg2->extra_stamp),
+                  to_microseconds(msg3->extra_stamp),
+                  to_microseconds(msg4->extra_stamp),
+                  to_microseconds(msg5->extra_stamp),
+                  to_microseconds(msg6->extra_stamp),
+                  to_microseconds(msg7->extra_stamp),
+                  to_microseconds(msg8->extra_stamp)}));
+    RCLCPP_INFO(
+        this->get_logger(),
+        "SyncSubscriber: msg1_index = %s, msg2_index = %s, msg3_index = "
+        "%s, msg4_index = %s, msg5_index = %s, msg6_index = %s, "
+        "msg7_index = %s, msg8_index = %s, sync_cb_index_ = %zu",
+        msg1->header.frame_id.c_str(), msg2->header.frame_id.c_str(),
+        msg3->header.frame_id.c_str(), msg4->header.frame_id.c_str(),
+        msg5->header.frame_id.c_str(), msg6->header.frame_id.c_str(),
+        msg7->header.frame_id.c_str(), msg8->header.frame_id.c_str(),
+        sync_cb_index_);
+    sync_cb_index_++;
+  }
+
+  std::shared_ptr<
+      message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>
+      sub1_;
+  std::shared_ptr<
+      message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>
+      sub2_;
+  std::shared_ptr<
+      message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>
+      sub3_;
+  std::shared_ptr<
+      message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>
+      sub4_;
+  std::shared_ptr<
+      message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>
+      sub5_;
+  std::shared_ptr<
+      message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>
+      sub6_;
+  std::shared_ptr<
+      message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>
+      sub7_;
+  std::shared_ptr<
+      message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>
+      sub8_;
+  std::shared_ptr<message_filters::Synchronizer<SyncPolicy>> sync_;
+  size_t sync_cb_index_;
+  std::string session_name_;
+};
+
 // Register each template specialization as a separate component
 RCLCPP_COMPONENTS_REGISTER_NODE(SyncSubscriber<1>)
 RCLCPP_COMPONENTS_REGISTER_NODE(SyncSubscriber<2>)
 RCLCPP_COMPONENTS_REGISTER_NODE(SyncSubscriber<3>)
 RCLCPP_COMPONENTS_REGISTER_NODE(SyncSubscriber<4>)
+RCLCPP_COMPONENTS_REGISTER_NODE(SyncSubscriber<5>)
+RCLCPP_COMPONENTS_REGISTER_NODE(SyncSubscriber<6>)
+RCLCPP_COMPONENTS_REGISTER_NODE(SyncSubscriber<7>)
+RCLCPP_COMPONENTS_REGISTER_NODE(SyncSubscriber<8>)

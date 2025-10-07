@@ -36,7 +36,7 @@ rclcpp_components_register_nodes(subscribe_publisher_component "SubscribePublish
 add_library(sync_subscriber_component SHARED sync_subscriber.cpp)
 ament_target_dependencies(sync_subscriber_component rclcpp rclcpp_components custom_msg message_filters)
 target_link_libraries(sync_subscriber_component ${PMU_ANALYZER_LIB})
-rclcpp_components_register_nodes(sync_subscriber_component "SyncSubscriber<1>;SyncSubscriber<2>;SyncSubscriber<3>;SyncSubscriber<4>")
+rclcpp_components_register_nodes(sync_subscriber_component "SyncSubscriber<1>;SyncSubscriber<2>;SyncSubscriber<3>;SyncSubscriber<4>;SyncSubscriber<5>;SyncSubscriber<6>;SyncSubscriber<7>;SyncSubscriber<8>")
 set_target_properties(sync_subscriber_component PROPERTIES
   BUILD_RPATH "${CMAKE_CURRENT_SOURCE_DIR}/../../external/pmu_analyzer/lib"
   INSTALL_RPATH "$ORIGIN/../lib:$ORIGIN/../../custom_msg/lib:${CMAKE_INSTALL_PREFIX}/lib")

@@ -23,7 +23,7 @@ if [ $# -lt 1 ]; then
 	echo "Usage: sudo $0 <num_publishers> [workspace_root]"
 	echo ""
 	echo "Arguments:"
-	echo "  num_publishers: Number of publishers to launch (1-4)"
+	echo "  num_publishers: Number of publishers to launch (1-8)"
 	echo "  workspace_root: Path to workspace (default: \$HOME/ros_sync_evaluation)"
 	echo ""
 	echo "Examples:"
@@ -36,8 +36,8 @@ NUM_PUBLISHERS="$1"
 WORKSPACE_ROOT="${2:-$HOME/ros_sync_evaluation}"
 
 # Validate number of publishers
-if ! [[ "$NUM_PUBLISHERS" =~ ^[1-4]$ ]]; then
-	echo -e "${RED}Error: num_publishers must be 1, 2, 3, or 4${NC}"
+if ! [[ "$NUM_PUBLISHERS" =~ ^[1-8]$ ]]; then
+	echo -e "${RED}Error: num_publishers must be 1, 2, 3, 4, 5, 6, 7, or 8${NC}"
 	exit 1
 fi
 
