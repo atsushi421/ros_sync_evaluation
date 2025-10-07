@@ -63,7 +63,8 @@ def extract_label_from_filename(filename):
 
     # Handle ICE latency logs
     if name.startswith('latency_log_ice_'):
-        name = name.replace('latency_log_ice_', '')
+        num_pub = name.replace('latency_log_ice_', '')
+        return f"Awkernel\n{num_pub}pub"
 
     # Try to parse the filename
     if 'exact' in name:
@@ -71,13 +72,13 @@ def extract_label_from_filename(filename):
         if len(parts) >= 2:
             interval = parts[0]
             num_pub = parts[1]
-            return f"Exact\n{interval}ms\n{num_pub}pub"
+            return f"Exact\n{num_pub}pub"
     elif 'approximate' in name:
         parts = name.replace('approximate', '').split('_')
         if len(parts) >= 2:
             interval = parts[0]
             num_pub = parts[1]
-            return f"Approx\n{interval}ms\n{num_pub}pub"
+            return f"Approx {interval}ms\n{num_pub}pub"
 
     # Fallback: return the filename as-is
     return name
@@ -95,36 +96,41 @@ def plot_boxplot_comparison(log_data, output_path=None):
         print("Error: No data to plot")
         return
 
-    fig, ax = plt.subplots(figsize=(14, 8))
+    fig, ax = plt.subplots(figsize=(12, 8))
 
     # Prepare data for box plot
     labels = list(log_data.keys())
     data = [log_data[label] for label in labels]
 
     # Create box plot
-    bp = ax.boxplot(data, labels=labels, patch_artist=True,
-                    showmeans=True, meanline=True,
-                    boxprops=dict(facecolor='lightblue', alpha=0.7),
-                    medianprops=dict(color='red', linewidth=2),
-                    meanprops=dict(color='green', linewidth=2, linestyle='--'),
-                    whiskerprops=dict(linewidth=1.5),
-                    capprops=dict(linewidth=1.5))
+    bp = ax.boxplot(
+        data,
+        labels=labels,
+        patch_artist=True,
+        showmeans=True,
+        meanline=True,
+        boxprops=dict(facecolor="#3D649B", edgecolor="#34495E", linewidth=1.5, alpha=0.85),
+        medianprops=dict(color='none'),
+        meanprops=dict(color="#34495E", linewidth=2, linestyle='-'),
+        whiskerprops=dict(color='#34495E', linewidth=1.8, linestyle='-'),
+        capprops=dict(color='#34495E', linewidth=1.8)
+    )
 
     ax.set_ylabel('Latency (μs)', fontsize=12)
-    ax.set_xlabel('Configuration', fontsize=12)
-    ax.set_title('Latency Comparison Across Configurations', fontsize=14, fontweight='bold')
+    # ax.set_xlabel('Configuration', fontsize=12)
+    # ax.set_title('Latency Comparison Across Configurations', fontsize=14, fontweight='bold')
     ax.grid(True, alpha=0.3, axis='y')
 
     # Rotate x-axis labels if needed
     plt.xticks(rotation=0, ha='center')
 
-    # Add legend
-    from matplotlib.lines import Line2D
-    legend_elements = [
-        Line2D([0], [0], color='red', linewidth=2, label='Median'),
-        Line2D([0], [0], color='green', linewidth=2, linestyle='--', label='Mean')
-    ]
-    ax.legend(handles=legend_elements, loc='upper right')
+    # # Add legend
+    # from matplotlib.lines import Line2D
+    # legend_elements = [
+    #     Line2D([0], [0], color='red', linewidth=2, label='Median'),
+    #     Line2D([0], [0], color='green', linewidth=2, linestyle='--', label='Mean')
+    # ]
+    # ax.legend(handles=legend_elements, loc='upper right')
 
     # Print statistics for each configuration
     print("\n=== Latency Statistics Summary ===\n")
