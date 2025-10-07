@@ -8,6 +8,7 @@ from launch_ros.descriptions import ComposableNode
 def launch_setup(context, *args, **kwargs):
     # Get the number of publishers from launch configuration
     num_publishers = int(LaunchConfiguration('num_publishers').perform(context))
+    sync_policy = LaunchConfiguration('sync_policy').perform(context)
 
     # Create composable nodes list
     composable_nodes = [
@@ -37,6 +38,7 @@ def launch_setup(context, *args, **kwargs):
             package='nodes_for_evaluation',
             plugin=sync_plugin,
             name='sync_subscriber',
+            parameters=[{'sync_policy': sync_policy}],
         )
     )
 
@@ -61,7 +63,14 @@ def generate_launch_description():
         description='Number of publishers (1-8)'
     )
 
+    sync_policy_arg = DeclareLaunchArgument(
+        'sync_policy',
+        default_value='exact',
+        description='Synchronization policy: "exact" or "approximate"'
+    )
+
     return LaunchDescription([
         num_publishers_arg,
+        sync_policy_arg,
         OpaqueFunction(function=launch_setup),
     ])

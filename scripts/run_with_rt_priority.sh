@@ -12,7 +12,7 @@ NC='\033[0m' # No Color
 # Check if running with sufficient privileges
 if [ "$EUID" -ne 0 ]; then
 	echo -e "${RED}Error: This script must be run with sudo or as root${NC}"
-	echo "Usage: sudo $0 <num_publishers> [workspace_root]"
+	echo "Usage: sudo $0 <num_publishers> [sync_policy] [workspace_root]"
 	exit 1
 fi
 
@@ -20,24 +20,33 @@ fi
 if [ $# -lt 1 ]; then
 	echo -e "${RED}Error: Missing required arguments${NC}"
 	echo ""
-	echo "Usage: sudo $0 <num_publishers> [workspace_root]"
+	echo "Usage: sudo $0 <num_publishers> [sync_policy] [workspace_root]"
 	echo ""
 	echo "Arguments:"
 	echo "  num_publishers: Number of publishers to launch (1-8)"
+	echo "  sync_policy: Synchronization policy - 'exact' or 'approximate' (default: exact)"
 	echo "  workspace_root: Path to workspace (default: \$HOME/ros_sync_evaluation)"
 	echo ""
 	echo "Examples:"
 	echo "  sudo $0 3"
-	echo "  sudo $0 3 /home/atsushi/ros_sync_evaluation"
+	echo "  sudo $0 3 exact"
+	echo "  sudo $0 3 approximate /home/atsushi/ros_sync_evaluation"
 	exit 1
 fi
 
 NUM_PUBLISHERS="$1"
-WORKSPACE_ROOT="${2:-$HOME/ros_sync_evaluation}"
+SYNC_POLICY="${2:-exact}"
+WORKSPACE_ROOT="${3:-$HOME/ros_sync_evaluation}"
 
 # Validate number of publishers
 if ! [[ "$NUM_PUBLISHERS" =~ ^[1-8]$ ]]; then
 	echo -e "${RED}Error: num_publishers must be 1, 2, 3, 4, 5, 6, 7, or 8${NC}"
+	exit 1
+fi
+
+# Validate sync policy
+if [[ "$SYNC_POLICY" != "exact" && "$SYNC_POLICY" != "approximate" ]]; then
+	echo -e "${RED}Error: sync_policy must be 'exact' or 'approximate'${NC}"
 	exit 1
 fi
 
@@ -74,6 +83,7 @@ echo -e "${GREEN}ROS 2 Sync Evaluation Launcher (Component Container)${NC}"
 echo -e "${GREEN}========================================${NC}"
 echo "  Workspace Root: $WORKSPACE_ROOT"
 echo "  Number of Publishers: $NUM_PUBLISHERS"
+echo "  Sync Policy: $SYNC_POLICY"
 echo "  Mode: Single Process (All Nodes in Component Container)"
 echo "  RT Priority: SCHED_FIFO 99"
 echo "  PMU Config: ${PMU_ANALYZER_CONFIG_FILE:-<not set>}"
@@ -104,7 +114,7 @@ fi
 
 # Launch component container with all nodes (including sync_subscriber) in single process
 echo -e "${BLUE}Launching component container (all nodes in single process)...${NC}"
-ros2 launch "$LAUNCH_FILE" num_publishers:="$NUM_PUBLISHERS" &
+ros2 launch "$LAUNCH_FILE" num_publishers:="$NUM_PUBLISHERS" sync_policy:="$SYNC_POLICY" &
 CONTAINER_PID=$!
 echo -e "${GREEN}  Container PID: $CONTAINER_PID${NC}"
 

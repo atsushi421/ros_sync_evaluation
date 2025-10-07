@@ -1,6 +1,7 @@
 #include <custom_msg/msg/header_extra_stamp.hpp>
 #include <memory>
 #include <message_filters/subscriber.h>
+#include <message_filters/sync_policies/approximate_time.h>
 #include <message_filters/sync_policies/exact_time.h>
 #include <message_filters/synchronizer.h>
 #include <pmu_analyzer.hpp>
@@ -24,6 +25,9 @@ public:
       const rclcpp::NodeOptions &options = rclcpp::NodeOptions())
       : Node("sync_subscriber", options), sync_cb_index_(0),
         session_name_("sync_subscriber_subscribed") {
+    // Declare parameter for sync policy (not used for single publisher, but declared for consistency)
+    this->declare_parameter<std::string>("sync_policy", "exact");
+
     sub1_ = this->create_subscription<custom_msg::msg::HeaderExtraStamp>(
         "topic1", 1000,
         std::bind(&SyncSubscriber<1>::callback, this, std::placeholders::_1));
@@ -55,6 +59,10 @@ public:
       const rclcpp::NodeOptions &options = rclcpp::NodeOptions())
       : Node("sync_subscriber", options), sync_cb_index_(0),
         session_name_("sync_subscriber_subscribed") {
+    // Declare and get sync policy parameter
+    this->declare_parameter<std::string>("sync_policy", "exact");
+    std::string sync_policy = this->get_parameter("sync_policy").as_string();
+
     sub1_ = std::make_shared<
         message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
         this, "topic1");
@@ -62,11 +70,22 @@ public:
         message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
         this, "topic2");
 
-    sync_ = std::make_shared<message_filters::Synchronizer<SyncPolicy>>(
-        SyncPolicy(1000), *sub1_, *sub2_);
-    sync_->registerCallback(std::bind(&SyncSubscriber<2>::callback, this,
-                                      std::placeholders::_1,
-                                      std::placeholders::_2));
+    if (sync_policy == "approximate") {
+      sync_approx_ = std::make_shared<message_filters::Synchronizer<ApproxSyncPolicy>>(
+          ApproxSyncPolicy(1000), *sub1_, *sub2_);
+      sync_approx_->setMaxIntervalDuration(rclcpp::Duration::from_seconds(0.1));
+      sync_approx_->registerCallback(std::bind(&SyncSubscriber<2>::callback, this,
+                                        std::placeholders::_1,
+                                        std::placeholders::_2));
+      RCLCPP_INFO(this->get_logger(), "Using ApproximateTime sync policy");
+    } else {
+      sync_exact_ = std::make_shared<message_filters::Synchronizer<ExactSyncPolicy>>(
+          ExactSyncPolicy(1000), *sub1_, *sub2_);
+      sync_exact_->registerCallback(std::bind(&SyncSubscriber<2>::callback, this,
+                                        std::placeholders::_1,
+                                        std::placeholders::_2));
+      RCLCPP_INFO(this->get_logger(), "Using ExactTime sync policy");
+    }
 
     pmu_analyzer::ELAPSED_TIME_INIT(session_name_);
   }
@@ -76,7 +95,10 @@ public:
 private:
   typedef message_filters::sync_policies::ExactTime<
       custom_msg::msg::HeaderExtraStamp, custom_msg::msg::HeaderExtraStamp>
-      SyncPolicy;
+      ExactSyncPolicy;
+  typedef message_filters::sync_policies::ApproximateTime<
+      custom_msg::msg::HeaderExtraStamp, custom_msg::msg::HeaderExtraStamp>
+      ApproxSyncPolicy;
 
   void callback(const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg1,
                 const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg2) {
@@ -98,7 +120,8 @@ private:
   std::shared_ptr<
       message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>
       sub2_;
-  std::shared_ptr<message_filters::Synchronizer<SyncPolicy>> sync_;
+  std::shared_ptr<message_filters::Synchronizer<ExactSyncPolicy>> sync_exact_;
+  std::shared_ptr<message_filters::Synchronizer<ApproxSyncPolicy>> sync_approx_;
   size_t sync_cb_index_;
   std::string session_name_;
 };
@@ -110,6 +133,10 @@ public:
       const rclcpp::NodeOptions &options = rclcpp::NodeOptions())
       : Node("sync_subscriber", options), sync_cb_index_(0),
         session_name_("sync_subscriber_subscribed") {
+    // Declare and get sync policy parameter
+    this->declare_parameter<std::string>("sync_policy", "exact");
+    std::string sync_policy = this->get_parameter("sync_policy").as_string();
+
     sub1_ = std::make_shared<
         message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
         this, "topic1");
@@ -120,11 +147,22 @@ public:
         message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
         this, "topic3");
 
-    sync_ = std::make_shared<message_filters::Synchronizer<SyncPolicy>>(
-        SyncPolicy(1000), *sub1_, *sub2_, *sub3_);
-    sync_->registerCallback(
-        std::bind(&SyncSubscriber<3>::callback, this, std::placeholders::_1,
-                  std::placeholders::_2, std::placeholders::_3));
+    if (sync_policy == "approximate") {
+      sync_approx_ = std::make_shared<message_filters::Synchronizer<ApproxSyncPolicy>>(
+          ApproxSyncPolicy(1000), *sub1_, *sub2_, *sub3_);
+      sync_approx_->setMaxIntervalDuration(rclcpp::Duration::from_seconds(0.1));
+      sync_approx_->registerCallback(
+          std::bind(&SyncSubscriber<3>::callback, this, std::placeholders::_1,
+                    std::placeholders::_2, std::placeholders::_3));
+      RCLCPP_INFO(this->get_logger(), "Using ApproximateTime sync policy");
+    } else {
+      sync_exact_ = std::make_shared<message_filters::Synchronizer<ExactSyncPolicy>>(
+          ExactSyncPolicy(1000), *sub1_, *sub2_, *sub3_);
+      sync_exact_->registerCallback(
+          std::bind(&SyncSubscriber<3>::callback, this, std::placeholders::_1,
+                    std::placeholders::_2, std::placeholders::_3));
+      RCLCPP_INFO(this->get_logger(), "Using ExactTime sync policy");
+    }
 
     pmu_analyzer::ELAPSED_TIME_INIT(session_name_);
   }
@@ -135,7 +173,11 @@ private:
   typedef message_filters::sync_policies::ExactTime<
       custom_msg::msg::HeaderExtraStamp, custom_msg::msg::HeaderExtraStamp,
       custom_msg::msg::HeaderExtraStamp>
-      SyncPolicy;
+      ExactSyncPolicy;
+  typedef message_filters::sync_policies::ApproximateTime<
+      custom_msg::msg::HeaderExtraStamp, custom_msg::msg::HeaderExtraStamp,
+      custom_msg::msg::HeaderExtraStamp>
+      ApproxSyncPolicy;
 
   void callback(const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg1,
                 const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg2,
@@ -162,7 +204,8 @@ private:
   std::shared_ptr<
       message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>
       sub3_;
-  std::shared_ptr<message_filters::Synchronizer<SyncPolicy>> sync_;
+  std::shared_ptr<message_filters::Synchronizer<ExactSyncPolicy>> sync_exact_;
+  std::shared_ptr<message_filters::Synchronizer<ApproxSyncPolicy>> sync_approx_;
   size_t sync_cb_index_;
   std::string session_name_;
 };
@@ -174,6 +217,10 @@ public:
       const rclcpp::NodeOptions &options = rclcpp::NodeOptions())
       : Node("sync_subscriber", options), sync_cb_index_(0),
         session_name_("sync_subscriber_subscribed") {
+    // Declare and get sync policy parameter
+    this->declare_parameter<std::string>("sync_policy", "exact");
+    std::string sync_policy = this->get_parameter("sync_policy").as_string();
+
     sub1_ = std::make_shared<
         message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
         this, "topic1");
@@ -187,11 +234,22 @@ public:
         message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
         this, "topic4");
 
-    sync_ = std::make_shared<message_filters::Synchronizer<SyncPolicy>>(
-        SyncPolicy(1000), *sub1_, *sub2_, *sub3_, *sub4_);
-    sync_->registerCallback(std::bind(
-        &SyncSubscriber<4>::callback, this, std::placeholders::_1,
-        std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+    if (sync_policy == "approximate") {
+      sync_approx_ = std::make_shared<message_filters::Synchronizer<ApproxSyncPolicy>>(
+          ApproxSyncPolicy(1000), *sub1_, *sub2_, *sub3_, *sub4_);
+      sync_approx_->setMaxIntervalDuration(rclcpp::Duration::from_seconds(0.1));
+      sync_approx_->registerCallback(std::bind(
+          &SyncSubscriber<4>::callback, this, std::placeholders::_1,
+          std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+      RCLCPP_INFO(this->get_logger(), "Using ApproximateTime sync policy");
+    } else {
+      sync_exact_ = std::make_shared<message_filters::Synchronizer<ExactSyncPolicy>>(
+          ExactSyncPolicy(1000), *sub1_, *sub2_, *sub3_, *sub4_);
+      sync_exact_->registerCallback(std::bind(
+          &SyncSubscriber<4>::callback, this, std::placeholders::_1,
+          std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+      RCLCPP_INFO(this->get_logger(), "Using ExactTime sync policy");
+    }
 
     pmu_analyzer::ELAPSED_TIME_INIT(session_name_);
   }
@@ -202,7 +260,11 @@ private:
   typedef message_filters::sync_policies::ExactTime<
       custom_msg::msg::HeaderExtraStamp, custom_msg::msg::HeaderExtraStamp,
       custom_msg::msg::HeaderExtraStamp, custom_msg::msg::HeaderExtraStamp>
-      SyncPolicy;
+      ExactSyncPolicy;
+  typedef message_filters::sync_policies::ApproximateTime<
+      custom_msg::msg::HeaderExtraStamp, custom_msg::msg::HeaderExtraStamp,
+      custom_msg::msg::HeaderExtraStamp, custom_msg::msg::HeaderExtraStamp>
+      ApproxSyncPolicy;
 
   void callback(const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg1,
                 const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg2,
@@ -236,7 +298,8 @@ private:
   std::shared_ptr<
       message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>
       sub4_;
-  std::shared_ptr<message_filters::Synchronizer<SyncPolicy>> sync_;
+  std::shared_ptr<message_filters::Synchronizer<ExactSyncPolicy>> sync_exact_;
+  std::shared_ptr<message_filters::Synchronizer<ApproxSyncPolicy>> sync_approx_;
   size_t sync_cb_index_;
   std::string session_name_;
 };
@@ -248,6 +311,10 @@ public:
       const rclcpp::NodeOptions &options = rclcpp::NodeOptions())
       : Node("sync_subscriber", options), sync_cb_index_(0),
         session_name_("sync_subscriber_subscribed") {
+    // Declare and get sync policy parameter
+    this->declare_parameter<std::string>("sync_policy", "exact");
+    std::string sync_policy = this->get_parameter("sync_policy").as_string();
+
     sub1_ = std::make_shared<
         message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
         this, "topic1");
@@ -264,12 +331,24 @@ public:
         message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
         this, "topic5");
 
-    sync_ = std::make_shared<message_filters::Synchronizer<SyncPolicy>>(
-        SyncPolicy(1000), *sub1_, *sub2_, *sub3_, *sub4_, *sub5_);
-    sync_->registerCallback(std::bind(
-        &SyncSubscriber<5>::callback, this, std::placeholders::_1,
-        std::placeholders::_2, std::placeholders::_3, std::placeholders::_4,
-        std::placeholders::_5));
+    if (sync_policy == "approximate") {
+      sync_approx_ = std::make_shared<message_filters::Synchronizer<ApproxSyncPolicy>>(
+          ApproxSyncPolicy(1000), *sub1_, *sub2_, *sub3_, *sub4_, *sub5_);
+      sync_approx_->setMaxIntervalDuration(rclcpp::Duration::from_seconds(0.1));
+      sync_approx_->registerCallback(std::bind(
+          &SyncSubscriber<5>::callback, this, std::placeholders::_1,
+          std::placeholders::_2, std::placeholders::_3, std::placeholders::_4,
+          std::placeholders::_5));
+      RCLCPP_INFO(this->get_logger(), "Using ApproximateTime sync policy");
+    } else {
+      sync_exact_ = std::make_shared<message_filters::Synchronizer<ExactSyncPolicy>>(
+          ExactSyncPolicy(1000), *sub1_, *sub2_, *sub3_, *sub4_, *sub5_);
+      sync_exact_->registerCallback(std::bind(
+          &SyncSubscriber<5>::callback, this, std::placeholders::_1,
+          std::placeholders::_2, std::placeholders::_3, std::placeholders::_4,
+          std::placeholders::_5));
+      RCLCPP_INFO(this->get_logger(), "Using ExactTime sync policy");
+    }
 
     pmu_analyzer::ELAPSED_TIME_INIT(session_name_);
   }
@@ -281,7 +360,12 @@ private:
       custom_msg::msg::HeaderExtraStamp, custom_msg::msg::HeaderExtraStamp,
       custom_msg::msg::HeaderExtraStamp, custom_msg::msg::HeaderExtraStamp,
       custom_msg::msg::HeaderExtraStamp>
-      SyncPolicy;
+      ExactSyncPolicy;
+  typedef message_filters::sync_policies::ApproximateTime<
+      custom_msg::msg::HeaderExtraStamp, custom_msg::msg::HeaderExtraStamp,
+      custom_msg::msg::HeaderExtraStamp, custom_msg::msg::HeaderExtraStamp,
+      custom_msg::msg::HeaderExtraStamp>
+      ApproxSyncPolicy;
 
   void callback(const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg1,
                 const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg2,
@@ -320,7 +404,8 @@ private:
   std::shared_ptr<
       message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>
       sub5_;
-  std::shared_ptr<message_filters::Synchronizer<SyncPolicy>> sync_;
+  std::shared_ptr<message_filters::Synchronizer<ExactSyncPolicy>> sync_exact_;
+  std::shared_ptr<message_filters::Synchronizer<ApproxSyncPolicy>> sync_approx_;
   size_t sync_cb_index_;
   std::string session_name_;
 };
@@ -332,6 +417,10 @@ public:
       const rclcpp::NodeOptions &options = rclcpp::NodeOptions())
       : Node("sync_subscriber", options), sync_cb_index_(0),
         session_name_("sync_subscriber_subscribed") {
+    // Declare and get sync policy parameter
+    this->declare_parameter<std::string>("sync_policy", "exact");
+    std::string sync_policy = this->get_parameter("sync_policy").as_string();
+
     sub1_ = std::make_shared<
         message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
         this, "topic1");
@@ -351,12 +440,24 @@ public:
         message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
         this, "topic6");
 
-    sync_ = std::make_shared<message_filters::Synchronizer<SyncPolicy>>(
-        SyncPolicy(1000), *sub1_, *sub2_, *sub3_, *sub4_, *sub5_, *sub6_);
-    sync_->registerCallback(std::bind(
-        &SyncSubscriber<6>::callback, this, std::placeholders::_1,
-        std::placeholders::_2, std::placeholders::_3, std::placeholders::_4,
-        std::placeholders::_5, std::placeholders::_6));
+    if (sync_policy == "approximate") {
+      sync_approx_ = std::make_shared<message_filters::Synchronizer<ApproxSyncPolicy>>(
+          ApproxSyncPolicy(1000), *sub1_, *sub2_, *sub3_, *sub4_, *sub5_, *sub6_);
+      sync_approx_->setMaxIntervalDuration(rclcpp::Duration::from_seconds(0.1));
+      sync_approx_->registerCallback(std::bind(
+          &SyncSubscriber<6>::callback, this, std::placeholders::_1,
+          std::placeholders::_2, std::placeholders::_3, std::placeholders::_4,
+          std::placeholders::_5, std::placeholders::_6));
+      RCLCPP_INFO(this->get_logger(), "Using ApproximateTime sync policy");
+    } else {
+      sync_exact_ = std::make_shared<message_filters::Synchronizer<ExactSyncPolicy>>(
+          ExactSyncPolicy(1000), *sub1_, *sub2_, *sub3_, *sub4_, *sub5_, *sub6_);
+      sync_exact_->registerCallback(std::bind(
+          &SyncSubscriber<6>::callback, this, std::placeholders::_1,
+          std::placeholders::_2, std::placeholders::_3, std::placeholders::_4,
+          std::placeholders::_5, std::placeholders::_6));
+      RCLCPP_INFO(this->get_logger(), "Using ExactTime sync policy");
+    }
 
     pmu_analyzer::ELAPSED_TIME_INIT(session_name_);
   }
@@ -368,7 +469,12 @@ private:
       custom_msg::msg::HeaderExtraStamp, custom_msg::msg::HeaderExtraStamp,
       custom_msg::msg::HeaderExtraStamp, custom_msg::msg::HeaderExtraStamp,
       custom_msg::msg::HeaderExtraStamp, custom_msg::msg::HeaderExtraStamp>
-      SyncPolicy;
+      ExactSyncPolicy;
+  typedef message_filters::sync_policies::ApproximateTime<
+      custom_msg::msg::HeaderExtraStamp, custom_msg::msg::HeaderExtraStamp,
+      custom_msg::msg::HeaderExtraStamp, custom_msg::msg::HeaderExtraStamp,
+      custom_msg::msg::HeaderExtraStamp, custom_msg::msg::HeaderExtraStamp>
+      ApproxSyncPolicy;
 
   void callback(const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg1,
                 const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg2,
@@ -414,7 +520,8 @@ private:
   std::shared_ptr<
       message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>
       sub6_;
-  std::shared_ptr<message_filters::Synchronizer<SyncPolicy>> sync_;
+  std::shared_ptr<message_filters::Synchronizer<ExactSyncPolicy>> sync_exact_;
+  std::shared_ptr<message_filters::Synchronizer<ApproxSyncPolicy>> sync_approx_;
   size_t sync_cb_index_;
   std::string session_name_;
 };
@@ -426,6 +533,10 @@ public:
       const rclcpp::NodeOptions &options = rclcpp::NodeOptions())
       : Node("sync_subscriber", options), sync_cb_index_(0),
         session_name_("sync_subscriber_subscribed") {
+    // Declare and get sync policy parameter
+    this->declare_parameter<std::string>("sync_policy", "exact");
+    std::string sync_policy = this->get_parameter("sync_policy").as_string();
+
     sub1_ = std::make_shared<
         message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
         this, "topic1");
@@ -448,13 +559,26 @@ public:
         message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
         this, "topic7");
 
-    sync_ = std::make_shared<message_filters::Synchronizer<SyncPolicy>>(
-        SyncPolicy(1000), *sub1_, *sub2_, *sub3_, *sub4_, *sub5_, *sub6_,
-        *sub7_);
-    sync_->registerCallback(std::bind(
-        &SyncSubscriber<7>::callback, this, std::placeholders::_1,
-        std::placeholders::_2, std::placeholders::_3, std::placeholders::_4,
-        std::placeholders::_5, std::placeholders::_6, std::placeholders::_7));
+    if (sync_policy == "approximate") {
+      sync_approx_ = std::make_shared<message_filters::Synchronizer<ApproxSyncPolicy>>(
+          ApproxSyncPolicy(1000), *sub1_, *sub2_, *sub3_, *sub4_, *sub5_, *sub6_,
+          *sub7_);
+      sync_approx_->setMaxIntervalDuration(rclcpp::Duration::from_seconds(0.1));
+      sync_approx_->registerCallback(std::bind(
+          &SyncSubscriber<7>::callback, this, std::placeholders::_1,
+          std::placeholders::_2, std::placeholders::_3, std::placeholders::_4,
+          std::placeholders::_5, std::placeholders::_6, std::placeholders::_7));
+      RCLCPP_INFO(this->get_logger(), "Using ApproximateTime sync policy");
+    } else {
+      sync_exact_ = std::make_shared<message_filters::Synchronizer<ExactSyncPolicy>>(
+          ExactSyncPolicy(1000), *sub1_, *sub2_, *sub3_, *sub4_, *sub5_, *sub6_,
+          *sub7_);
+      sync_exact_->registerCallback(std::bind(
+          &SyncSubscriber<7>::callback, this, std::placeholders::_1,
+          std::placeholders::_2, std::placeholders::_3, std::placeholders::_4,
+          std::placeholders::_5, std::placeholders::_6, std::placeholders::_7));
+      RCLCPP_INFO(this->get_logger(), "Using ExactTime sync policy");
+    }
 
     pmu_analyzer::ELAPSED_TIME_INIT(session_name_);
   }
@@ -467,7 +591,13 @@ private:
       custom_msg::msg::HeaderExtraStamp, custom_msg::msg::HeaderExtraStamp,
       custom_msg::msg::HeaderExtraStamp, custom_msg::msg::HeaderExtraStamp,
       custom_msg::msg::HeaderExtraStamp>
-      SyncPolicy;
+      ExactSyncPolicy;
+  typedef message_filters::sync_policies::ApproximateTime<
+      custom_msg::msg::HeaderExtraStamp, custom_msg::msg::HeaderExtraStamp,
+      custom_msg::msg::HeaderExtraStamp, custom_msg::msg::HeaderExtraStamp,
+      custom_msg::msg::HeaderExtraStamp, custom_msg::msg::HeaderExtraStamp,
+      custom_msg::msg::HeaderExtraStamp>
+      ApproxSyncPolicy;
 
   void callback(const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg1,
                 const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg2,
@@ -518,7 +648,8 @@ private:
   std::shared_ptr<
       message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>
       sub7_;
-  std::shared_ptr<message_filters::Synchronizer<SyncPolicy>> sync_;
+  std::shared_ptr<message_filters::Synchronizer<ExactSyncPolicy>> sync_exact_;
+  std::shared_ptr<message_filters::Synchronizer<ApproxSyncPolicy>> sync_approx_;
   size_t sync_cb_index_;
   std::string session_name_;
 };
@@ -530,6 +661,10 @@ public:
       const rclcpp::NodeOptions &options = rclcpp::NodeOptions())
       : Node("sync_subscriber", options), sync_cb_index_(0),
         session_name_("sync_subscriber_subscribed") {
+    // Declare and get sync policy parameter
+    this->declare_parameter<std::string>("sync_policy", "exact");
+    std::string sync_policy = this->get_parameter("sync_policy").as_string();
+
     sub1_ = std::make_shared<
         message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
         this, "topic1");
@@ -555,14 +690,28 @@ public:
         message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>(
         this, "topic8");
 
-    sync_ = std::make_shared<message_filters::Synchronizer<SyncPolicy>>(
-        SyncPolicy(1000), *sub1_, *sub2_, *sub3_, *sub4_, *sub5_, *sub6_,
-        *sub7_, *sub8_);
-    sync_->registerCallback(std::bind(
-        &SyncSubscriber<8>::callback, this, std::placeholders::_1,
-        std::placeholders::_2, std::placeholders::_3, std::placeholders::_4,
-        std::placeholders::_5, std::placeholders::_6, std::placeholders::_7,
-        std::placeholders::_8));
+    if (sync_policy == "approximate") {
+      sync_approx_ = std::make_shared<message_filters::Synchronizer<ApproxSyncPolicy>>(
+          ApproxSyncPolicy(1000), *sub1_, *sub2_, *sub3_, *sub4_, *sub5_, *sub6_,
+          *sub7_, *sub8_);
+      sync_approx_->setMaxIntervalDuration(rclcpp::Duration::from_seconds(0.1));
+      sync_approx_->registerCallback(std::bind(
+          &SyncSubscriber<8>::callback, this, std::placeholders::_1,
+          std::placeholders::_2, std::placeholders::_3, std::placeholders::_4,
+          std::placeholders::_5, std::placeholders::_6, std::placeholders::_7,
+          std::placeholders::_8));
+      RCLCPP_INFO(this->get_logger(), "Using ApproximateTime sync policy");
+    } else {
+      sync_exact_ = std::make_shared<message_filters::Synchronizer<ExactSyncPolicy>>(
+          ExactSyncPolicy(1000), *sub1_, *sub2_, *sub3_, *sub4_, *sub5_, *sub6_,
+          *sub7_, *sub8_);
+      sync_exact_->registerCallback(std::bind(
+          &SyncSubscriber<8>::callback, this, std::placeholders::_1,
+          std::placeholders::_2, std::placeholders::_3, std::placeholders::_4,
+          std::placeholders::_5, std::placeholders::_6, std::placeholders::_7,
+          std::placeholders::_8));
+      RCLCPP_INFO(this->get_logger(), "Using ExactTime sync policy");
+    }
 
     pmu_analyzer::ELAPSED_TIME_INIT(session_name_);
   }
@@ -575,7 +724,13 @@ private:
       custom_msg::msg::HeaderExtraStamp, custom_msg::msg::HeaderExtraStamp,
       custom_msg::msg::HeaderExtraStamp, custom_msg::msg::HeaderExtraStamp,
       custom_msg::msg::HeaderExtraStamp, custom_msg::msg::HeaderExtraStamp>
-      SyncPolicy;
+      ExactSyncPolicy;
+  typedef message_filters::sync_policies::ApproximateTime<
+      custom_msg::msg::HeaderExtraStamp, custom_msg::msg::HeaderExtraStamp,
+      custom_msg::msg::HeaderExtraStamp, custom_msg::msg::HeaderExtraStamp,
+      custom_msg::msg::HeaderExtraStamp, custom_msg::msg::HeaderExtraStamp,
+      custom_msg::msg::HeaderExtraStamp, custom_msg::msg::HeaderExtraStamp>
+      ApproxSyncPolicy;
 
   void callback(const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg1,
                 const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg2,
@@ -632,7 +787,8 @@ private:
   std::shared_ptr<
       message_filters::Subscriber<custom_msg::msg::HeaderExtraStamp>>
       sub8_;
-  std::shared_ptr<message_filters::Synchronizer<SyncPolicy>> sync_;
+  std::shared_ptr<message_filters::Synchronizer<ExactSyncPolicy>> sync_exact_;
+  std::shared_ptr<message_filters::Synchronizer<ApproxSyncPolicy>> sync_approx_;
   size_t sync_cb_index_;
   std::string session_name_;
 };
