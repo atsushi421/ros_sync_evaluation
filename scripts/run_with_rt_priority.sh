@@ -12,7 +12,7 @@ NC='\033[0m' # No Color
 # Check if running with sufficient privileges
 if [ "$EUID" -ne 0 ]; then
 	echo -e "${RED}Error: This script must be run with sudo or as root${NC}"
-	echo "Usage: sudo $0 <num_publishers> [sync_policy] [max_interval_duration] [workspace_root]"
+	echo "Usage: sudo $0 [workspace_root] [num_publishers]> [sync_policy] [max_interval_duration]"
 	exit 1
 fi
 
@@ -20,26 +20,26 @@ fi
 if [ $# -lt 1 ]; then
 	echo -e "${RED}Error: Missing required arguments${NC}"
 	echo ""
-	echo "Usage: sudo $0 <num_publishers> [sync_policy] [max_interval_duration] [workspace_root]"
+	echo "Usage: sudo $0 [workspace_root] [num_publishers]> [sync_policy] [max_interval_duration]"
 	echo ""
 	echo "Arguments:"
+	echo "  workspace_root: Path to workspace (default: \$HOME/ros_sync_evaluation)"
 	echo "  num_publishers: Number of publishers to launch (1-8)"
 	echo "  sync_policy: Synchronization policy - 'exact' or 'approximate' (default: exact)"
-	echo "  max_interval_duration: Max interval for approximate sync in milliseconds (default: 100.0)"
-	echo "  workspace_root: Path to workspace (default: \$HOME/ros_sync_evaluation)"
+	echo "  max_interval_duration: Max interval for approximate sync in milliseconds (default: 50)"
 	echo ""
 	echo "Examples:"
-	echo "  sudo $0 3"
-	echo "  sudo $0 3 exact"
-	echo "  sudo $0 3 approximate 50"
-	echo "  sudo $0 3 approximate 100 /home/atsushi/ros_sync_evaluation"
+	echo "  sudo $0 /home/atsushi/ros_sync_evaluation 3"
+	echo "  sudo $0 /home/atsushi/ros_sync_evaluation 3 exact"
+	echo "  sudo $0 /home/atsushi/ros_sync_evaluation 3 approximate 50"
+	echo "  sudo $0 /home/atsushi/ros_sync_evaluation 3 approximate 100"
 	exit 1
 fi
 
-NUM_PUBLISHERS="$1"
-SYNC_POLICY="${2:-exact}"
-MAX_INTERVAL_DURATION="${3:-100.0}"
-WORKSPACE_ROOT="${4:-$HOME/ros_sync_evaluation}"
+WORKSPACE_ROOT="$1"
+NUM_PUBLISHERS="$2"
+SYNC_POLICY="${3:-exact}"
+MAX_INTERVAL_DURATION="${4:-50}"
 
 # Validate number of publishers
 if ! [[ "$NUM_PUBLISHERS" =~ ^[1-8]$ ]]; then
