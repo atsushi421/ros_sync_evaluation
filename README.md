@@ -4,7 +4,7 @@ This package provides a parametric evaluation framework for ROS 2 message synchr
 
 ## Package Structure
 
-- `source_publisher`: Publishes continuous start signals (10Hz) to coordinate all publishers
+- `source_publisher`: Publishes continuous start signals (25ms) to coordinate all publishers
 - `subscribe_publisher`: Parametric publisher that reacts to start signals with random pseudo processing (1000-50000 μs)
   - **ExactTime mode**: Updates timestamps to ensure identical values across publishers
   - **ApproximateTime mode**: Preserves original timestamps, allowing natural time variations
