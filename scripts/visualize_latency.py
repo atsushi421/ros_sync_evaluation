@@ -65,7 +65,7 @@ def extract_label_from_filename(filename, parent_dir_name=None):
     # Parse sync policy and interval
     if name.startswith('exact'):
         interval = name.replace('exact', '')
-        return (num_pub, f"Exact {interval}ms")
+        return (num_pub, f"Exact")
     elif name.startswith('approximate'):
         interval = name.replace('approximate', '')
         return (num_pub, f"Approx {interval}ms")
@@ -113,6 +113,7 @@ def plot_boxplot_comparison(log_data_by_num_pub, output_dir=None):
         )
 
         ax.set_ylabel('Latency (μs)', fontsize=12)
+        ax.set_yscale('log')
         ax.set_title(f'{num_pub} Publishers', fontsize=14, fontweight='bold')
         ax.grid(True, alpha=0.3, axis='y')
         plt.xticks(rotation=0, ha='center')

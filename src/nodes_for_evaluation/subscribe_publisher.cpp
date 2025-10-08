@@ -20,7 +20,11 @@ public:
       : Node("subscribe_publisher", options), rng_(std::random_device{}()),
         dist_(1000, 50000) {
     this->declare_parameter("topic_id", 1);
+    this->declare_parameter<std::string>("sync_policy", "exact");
+
     topic_id_ = this->get_parameter("topic_id").as_int();
+    sync_policy_ = this->get_parameter("sync_policy").as_string();
+
     std::string topic_name = "topic" + std::to_string(topic_id_);
     session_name_ =
         "subscribe_publisher_published_" + std::to_string(topic_id_);
@@ -33,6 +37,10 @@ public:
                   std::placeholders::_1));
 
     pmu_analyzer::ELAPSED_TIME_INIT(session_name_);
+
+    RCLCPP_INFO(this->get_logger(),
+                "SubscribePublisher %d initialized with sync_policy: %s",
+                topic_id_, sync_policy_.c_str());
   }
 
   ~SubscribePublisher() { pmu_analyzer::ELAPSED_TIME_CLOSE(session_name_); }
@@ -62,7 +70,9 @@ private:
     int iterations = dist_(rng_);
     wait_microsec(iterations);
 
-    msg->header.stamp = this->now();
+    if (sync_policy_ == "approximate") {
+      msg->header.stamp = this->now();
+    }
     publisher_->publish(*msg);
     pmu_analyzer::ELAPSED_TIME_TIMESTAMP(session_name_, 0, true,
                                          to_microseconds(msg->header.stamp));
@@ -73,6 +83,7 @@ private:
       subscriber_;
   int topic_id_;
   std::string session_name_;
+  std::string sync_policy_;
   std::mt19937 rng_;
   std::uniform_int_distribution<int> dist_;
 };

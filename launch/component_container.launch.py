@@ -28,7 +28,10 @@ def launch_setup(context, *args, **kwargs):
                 package='nodes_for_evaluation',
                 plugin='SubscribePublisher',
                 name=f'subscribe_publisher_{i}',
-                parameters=[{'topic_id': i}],
+                parameters=[{
+                    'topic_id': i,
+                    'sync_policy': sync_policy
+                }],
             )
         )
 
