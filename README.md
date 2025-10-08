@@ -74,13 +74,6 @@ sudo scripts/run_with_rt_priority.sh /home/user/ros_sync_evaluation 4 approximat
 Visualize and compare latencies across different configurations with separate plots per publisher count:
 
 ```bash
-# Compare all configurations (creates separate plots for each num_publishers)
-python3 scripts/visualize_latency.py [log_dir]
-
-# Save plots to directory
 python3 scripts/visualize_latency.py pmu_analyzer_log -o plots/
 # Output: plots/latency_comparison_3pub.png, plots/latency_comparison_4pub.png, etc.
-
-# Visualize specific log file
-python3 scripts/visualize_latency.py pmu_analyzer_log/3/exact50_latencies_us.txt
 ```
