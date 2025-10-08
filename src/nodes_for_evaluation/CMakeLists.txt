@@ -31,7 +31,11 @@ rclcpp_components_register_nodes(source_publisher_component "SourcePublisher")
 
 add_library(subscribe_publisher_component SHARED subscribe_publisher.cpp)
 ament_target_dependencies(subscribe_publisher_component rclcpp rclcpp_components custom_msg)
+target_link_libraries(subscribe_publisher_component ${PMU_ANALYZER_LIB})
 rclcpp_components_register_nodes(subscribe_publisher_component "SubscribePublisher")
+set_target_properties(subscribe_publisher_component PROPERTIES
+  BUILD_RPATH "${CMAKE_CURRENT_SOURCE_DIR}/../../external/pmu_analyzer/lib"
+  INSTALL_RPATH "$ORIGIN/../lib:$ORIGIN/../../custom_msg/lib:${CMAKE_INSTALL_PREFIX}/lib")
 
 add_library(sync_subscriber_component SHARED sync_subscriber.cpp)
 ament_target_dependencies(sync_subscriber_component rclcpp rclcpp_components custom_msg message_filters)

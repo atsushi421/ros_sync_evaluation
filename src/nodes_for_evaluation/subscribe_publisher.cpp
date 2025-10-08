@@ -1,11 +1,17 @@
 #include <chrono>
 #include <custom_msg/msg/header_extra_stamp.hpp>
 #include <memory>
+#include <pmu_analyzer.hpp>
 #include <random>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_components/register_node_macro.hpp>
 
 using namespace std::chrono_literals;
+
+long long to_microseconds(const builtin_interfaces::msg::Time &t) {
+  return static_cast<long long>(t.sec) * 1000000LL +
+         static_cast<long long>(t.nanosec) / 1000LL;
+}
 
 class SubscribePublisher : public rclcpp::Node {
 public:
@@ -16,6 +22,8 @@ public:
     this->declare_parameter("topic_id", 1);
     topic_id_ = this->get_parameter("topic_id").as_int();
     std::string topic_name = "topic" + std::to_string(topic_id_);
+    session_name_ =
+        "subscribe_publisher_published_" + std::to_string(topic_id_);
 
     publisher_ = this->create_publisher<custom_msg::msg::HeaderExtraStamp>(
         topic_name, 1000);
@@ -23,7 +31,11 @@ public:
         "start_topic", 1000,
         std::bind(&SubscribePublisher::start_callback, this,
                   std::placeholders::_1));
+
+    pmu_analyzer::ELAPSED_TIME_INIT(session_name_);
   }
+
+  ~SubscribePublisher() { pmu_analyzer::ELAPSED_TIME_CLOSE(session_name_); }
 
 private:
   void wait_microsec(uint64_t usec) {
@@ -50,8 +62,10 @@ private:
     int iterations = dist_(rng_);
     wait_microsec(iterations);
 
-    msg->extra_stamp = this->now();
+    msg->header.stamp = this->now();
     publisher_->publish(*msg);
+    pmu_analyzer::ELAPSED_TIME_TIMESTAMP(session_name_, 0, true,
+                                         to_microseconds(msg->header.stamp));
   }
 
   rclcpp::Publisher<custom_msg::msg::HeaderExtraStamp>::SharedPtr publisher_;
