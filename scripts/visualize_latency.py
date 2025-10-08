@@ -114,7 +114,7 @@ def plot_boxplot_comparison(log_data_by_num_pub, output_dir=None):
 
         ax.set_ylabel('Latency (μs)', fontsize=12)
         ax.set_yscale('log')
-        ax.set_title(f'{num_pub} Publishers', fontsize=14, fontweight='bold')
+        ax.set_xlabel(f'Num Middle: {num_pub}', fontsize=14, fontweight='bold')
         ax.grid(True, alpha=0.3, axis='y')
         plt.xticks(rotation=0, ha='center')
 
@@ -173,9 +173,6 @@ def main():
     parser.add_argument(
         '-o', '--output', type=str, default=None,
         help='Output directory for plots (e.g., plots/)')
-    parser.add_argument(
-        '--pattern', type=str, default='*',
-        help='File pattern to match (default: *')
 
     args = parser.parse_args()
 
@@ -201,10 +198,10 @@ def main():
     else:
         # Read all log files in the directory and subdirectories
         print(f"Reading log files from directory: {log_dir}")
-        log_files = collect_log_files(log_dir, args.pattern)
+        log_files = collect_log_files(log_dir, '*')
 
         if not log_files:
-            print(f"Error: No log files found in {log_dir} matching pattern '{args.pattern}'")
+            print(f"Error: No log files found in {log_dir}")
             return 1
 
         # Group by num_publishers
