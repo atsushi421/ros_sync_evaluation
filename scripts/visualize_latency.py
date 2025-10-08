@@ -2,20 +2,16 @@ import argparse
 import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path
+from collections import defaultdict
 
 
 def parse_log_file(log_file_path):
     """
-    Parse the PMU analyzer log file.
+    Parse latency log files.
 
-    Two formats are supported:
-    1. PMU elapsed time log: <session_name> <counter_id> <index> <timestamp1> <timestamp2>
-       - Timestamps are in microseconds
-       - Latency is calculated as: timestamp1 - timestamp2
-
-    2. ICE latency log (latency_log_ice_*): Single value per line
-       - Each line contains latency in nanoseconds
-       - Latency is converted to microseconds (ns / 1000)
+    Supports two formats:
+    1. Latency files (*_latencies_us.txt): Single latency value (in μs) per line
+    2. ICE latency logs (latency_log_ice_*): Single latency value (in ns) per line
 
     Returns:
         list: latencies_us (list of latencies in microseconds)
@@ -26,147 +22,159 @@ def parse_log_file(log_file_path):
 
     with open(log_file_path, 'r') as f:
         for line in f:
-            parts = line.strip().split()
-            if not parts:
+            line = line.strip()
+            if not line:
                 continue
 
-            if is_ice_latency_log:
-                # For ICE latency logs, each line contains a single latency value in nanoseconds
-                if len(parts) >= 1:
-                    latency_ns = int(parts[0])
-                    latency_us = latency_ns / 1000.0
-                    latencies_us.append(latency_us)
-            else:
-                # For PMU elapsed time logs, calculate difference between timestamps
-                if len(parts) >= 5:
-                    timestamp1 = int(parts[3])
-                    timestamp2 = int(parts[4])
-                    latency = timestamp1 - timestamp2
-                    latencies_us.append(latency)
+            try:
+                if is_ice_latency_log:
+                    # ICE logs: latency in nanoseconds
+                    latency_ns = int(line)
+                    latencies_us.append(latency_ns / 1000.0)
+                else:
+                    # Standard latency files: latency in microseconds
+                    latencies_us.append(int(line))
+            except ValueError:
+                continue
 
-    return latencies_us[1:]  # filter first data
+    # Filter first data point
+    return latencies_us[1:] if len(latencies_us) > 1 else latencies_us
 
 
-def extract_label_from_filename(filename):
+def extract_label_from_filename(filename, parent_dir_name=None):
     """
     Extract a readable label from the log filename.
 
-    Expected formats:
-    1. <sync_policy><max_interval_duration>_<num_publishers>
-       Examples: exact50_3, approximate100_4
-    2. latency_log_ice_<config>
-       Examples: latency_log_ice_exact50_3
-
-    Returns a formatted label for the plot.
+    Returns:
+        tuple: (num_publishers, label_text)
     """
     name = Path(filename).stem  # Remove extension
 
     # Handle ICE latency logs
     if name.startswith('latency_log_ice_'):
         num_pub = name.replace('latency_log_ice_', '')
-        return f"Awkernel\n{num_pub}pub"
+        return (num_pub, "Awkernel")
 
-    # Try to parse the filename
-    if 'exact' in name:
-        parts = name.replace('exact', '').split('_')
-        if len(parts) >= 2:
-            interval = parts[0]
-            num_pub = parts[1]
-            return f"Exact\n{num_pub}pub"
-    elif 'approximate' in name:
-        parts = name.replace('approximate', '').split('_')
-        if len(parts) >= 2:
-            interval = parts[0]
-            num_pub = parts[1]
-            return f"Approx {interval}ms\n{num_pub}pub"
+    # Extract num_publishers from parent directory name
+    num_pub = parent_dir_name if parent_dir_name and parent_dir_name.isdigit() else "?"
 
-    # Fallback: return the filename as-is
-    return name
+    # Remove '_latencies_us' suffix
+    if name.endswith('_latencies_us'):
+        name = name[:-13]
+
+    # Parse sync policy and interval
+    if name.startswith('exact'):
+        interval = name.replace('exact', '')
+        return (num_pub, f"Exact {interval}ms")
+    elif name.startswith('approximate'):
+        interval = name.replace('approximate', '')
+        return (num_pub, f"Approx {interval}ms")
+
+    # Fallback
+    return (num_pub, name)
 
 
-def plot_boxplot_comparison(log_data, output_path=None):
+def plot_boxplot_comparison(log_data_by_num_pub, output_dir=None):
     """
-    Create a box plot comparing latencies across different configurations.
+    Create separate box plots for each num_publishers group.
 
     Args:
-        log_data: Dictionary mapping labels to latency data (in microseconds)
-        output_path: Optional path to save the plot
+        log_data_by_num_pub: Dictionary mapping num_publishers to {label: latencies}
+        output_dir: Optional directory to save plots (if None, display interactively)
     """
-    if not log_data:
+    if not log_data_by_num_pub:
         print("Error: No data to plot")
         return
 
-    fig, ax = plt.subplots(figsize=(12, 8))
+    for num_pub, log_data in sorted(log_data_by_num_pub.items()):
+        print(f"\n=== {num_pub} Publishers ===")
 
-    # Prepare data for box plot
-    labels = list(log_data.keys())
-    data = [log_data[label] for label in labels]
+        if not log_data:
+            continue
 
-    # Create box plot
-    bp = ax.boxplot(
-        data,
-        labels=labels,
-        patch_artist=True,
-        showmeans=True,
-        meanline=True,
-        boxprops=dict(facecolor="#3D649B", edgecolor="#34495E", linewidth=1.5, alpha=0.85),
-        medianprops=dict(color='none'),
-        meanprops=dict(color="#34495E", linewidth=2, linestyle='-'),
-        whiskerprops=dict(color='#34495E', linewidth=1.8, linestyle='-'),
-        capprops=dict(color='#34495E', linewidth=1.8)
-    )
+        _, ax = plt.subplots(figsize=(12, 8))
 
-    ax.set_ylabel('Latency (μs)', fontsize=12)
-    # ax.set_xlabel('Configuration', fontsize=12)
-    # ax.set_title('Latency Comparison Across Configurations', fontsize=14, fontweight='bold')
-    ax.grid(True, alpha=0.3, axis='y')
+        # Prepare data for box plot
+        labels = list(log_data.keys())
+        data = [log_data[label] for label in labels]
 
-    # Rotate x-axis labels if needed
-    plt.xticks(rotation=0, ha='center')
+        # Create box plot
+        ax.boxplot(
+            data,
+            labels=labels,
+            patch_artist=True,
+            showmeans=True,
+            meanline=True,
+            boxprops=dict(facecolor="#3D649B", edgecolor="#34495E", linewidth=1.5, alpha=0.85),
+            medianprops=dict(color='none'),
+            meanprops=dict(color="#34495E", linewidth=2, linestyle='-'),
+            whiskerprops=dict(color='#34495E', linewidth=1.8, linestyle='-'),
+            capprops=dict(color='#34495E', linewidth=1.8)
+        )
 
-    # # Add legend
-    # from matplotlib.lines import Line2D
-    # legend_elements = [
-    #     Line2D([0], [0], color='red', linewidth=2, label='Median'),
-    #     Line2D([0], [0], color='green', linewidth=2, linestyle='--', label='Mean')
-    # ]
-    # ax.legend(handles=legend_elements, loc='upper right')
+        ax.set_ylabel('Latency (μs)', fontsize=12)
+        ax.set_title(f'{num_pub} Publishers', fontsize=14, fontweight='bold')
+        ax.grid(True, alpha=0.3, axis='y')
+        plt.xticks(rotation=0, ha='center')
 
-    # Print statistics for each configuration
-    print("\n=== Latency Statistics Summary ===\n")
-    for label, latencies in log_data.items():
-        if len(latencies) > 0:
-            print(f"{label}:")
-            print(f"  Samples: {len(latencies)}")
-            print(f"  Min:     {np.min(latencies):10.2f} μs")
-            print(f"  Max:     {np.max(latencies):10.2f} μs")
-            print(f"  Mean:    {np.mean(latencies):10.2f} μs")
-            print(f"  Median:  {np.median(latencies):10.2f} μs")
-            print(f"  Std Dev: {np.std(latencies):10.2f} μs")
-            print(f"  95th %%:  {np.percentile(latencies, 95):10.2f} μs")
-            print(f"  99th %%:  {np.percentile(latencies, 99):10.2f} μs")
-            print()
+        # Print statistics
+        print("\nStatistics:")
+        for label, latencies in log_data.items():
+            if len(latencies) > 0:
+                print(f"\n{label}:")
+                print(f"  Samples: {len(latencies)}")
+                print(f"  Min:     {np.min(latencies):10.2f} μs")
+                print(f"  Max:     {np.max(latencies):10.2f} μs")
+                print(f"  Mean:    {np.mean(latencies):10.2f} μs")
+                print(f"  Median:  {np.median(latencies):10.2f} μs")
+                print(f"  Std Dev: {np.std(latencies):10.2f} μs")
+                print(f"  95th %%:  {np.percentile(latencies, 95):10.2f} μs")
+                print(f"  99th %%:  {np.percentile(latencies, 99):10.2f} μs")
 
-    plt.tight_layout()
+        plt.tight_layout()
 
-    if output_path:
-        plt.savefig(output_path, dpi=300, bbox_inches='tight')
-        print(f"Plot saved to: {output_path}")
-    else:
-        plt.show()
+        # Save or display
+        if output_dir:
+            output_path = Path(output_dir) / f"latency_comparison_{num_pub}pub.png"
+            plt.savefig(output_path, dpi=300, bbox_inches='tight')
+            print(f"\nPlot saved to: {output_path}")
+            plt.close()
+        else:
+            plt.show()
+
+
+def collect_log_files(log_dir, pattern):
+    """
+    Recursively collect log files from directory structure.
+
+    Searches for files matching pattern in log_dir and subdirectories.
+    """
+    log_files = []
+
+    # Search in root directory
+    log_files.extend(log_dir.glob(pattern))
+
+    # Search in numbered subdirectories (1-8)
+    for i in range(1, 9):
+        subdir = log_dir / str(i)
+        if subdir.exists() and subdir.is_dir():
+            log_files.extend(subdir.glob(pattern))
+
+    return sorted(log_files)
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Visualize latency comparison from PMU analyzer elapsed time logs')
+        description='Visualize latency comparison from PMU analyzer latency logs')
     parser.add_argument(
         'log_dir', type=str, nargs='?', default='pmu_analyzer_log',
         help='Path to the directory containing log files (default: pmu_analyzer_log)')
     parser.add_argument(
         '-o', '--output', type=str, default=None,
-        help='Output path for the plot (e.g., latency_comparison.png). If not specified, displays interactively.')
-    parser.add_argument('--pattern', type=str, default='*',
-                        help='File pattern to match (default: * for all files in directory)')
+        help='Output directory for plots (e.g., plots/)')
+    parser.add_argument(
+        '--pattern', type=str, default='*',
+        help='File pattern to match (default: *')
 
     args = parser.parse_args()
 
@@ -177,7 +185,7 @@ def main():
         print(f"Error: Log directory not found: {log_dir}")
         return 1
 
-    # If log_dir is a file, treat it as a single log file for backward compatibility
+    # If log_dir is a file, treat it as a single log file
     if log_dir.is_file():
         print(f"Reading single log file: {log_dir}")
         latencies = parse_log_file(log_dir)
@@ -185,39 +193,50 @@ def main():
             print("Error: No data found in log file")
             return 1
 
-        label = extract_label_from_filename(log_dir.name)
-        log_data = {label: latencies}
+        parent_dir_name = log_dir.parent.name
+        num_pub, label = extract_label_from_filename(log_dir.name, parent_dir_name)
+        log_data_by_num_pub = {num_pub: {label: latencies}}
         print(f"Loaded {len(latencies)} samples from {log_dir.name}")
     else:
-        # Read all log files in the directory
+        # Read all log files in the directory and subdirectories
         print(f"Reading log files from directory: {log_dir}")
-        log_files = sorted(log_dir.glob(args.pattern))
+        log_files = collect_log_files(log_dir, args.pattern)
 
         if not log_files:
             print(f"Error: No log files found in {log_dir} matching pattern '{args.pattern}'")
             return 1
 
-        log_data = {}
+        # Group by num_publishers
+        log_data_by_num_pub = defaultdict(dict)
+
         for log_file in log_files:
             if log_file.is_file():
-                print(f"  Processing: {log_file.name}")
+                print(f"  Processing: {log_file.relative_to(log_dir)}")
                 latencies = parse_log_file(log_file)
                 if len(latencies) > 0:
-                    label = extract_label_from_filename(log_file.name)
-                    log_data[label] = latencies
+                    parent_dir_name = log_file.parent.name
+                    num_pub, label = extract_label_from_filename(log_file.name, parent_dir_name)
+                    log_data_by_num_pub[num_pub][label] = latencies
                     print(f"    Loaded {len(latencies)} samples")
                 else:
                     print(f"    Warning: No data found in {log_file.name}")
 
-        if not log_data:
+        if not log_data_by_num_pub:
             print("Error: No valid data found in any log files")
             return 1
 
-        print(f"\nTotal configurations: {len(log_data)}")
+        print(f"\nTotal publisher groups: {len(log_data_by_num_pub)}")
+        print(f"Total configurations: {sum(len(v) for v in log_data_by_num_pub.values())}")
 
-    # Create box plot comparison
-    print("\nGenerating box plot comparison...")
-    plot_boxplot_comparison(log_data, args.output)
+    # Create output directory if specified
+    output_dir = None
+    if args.output:
+        output_dir = Path(args.output)
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Create box plot comparisons
+    print("\nGenerating box plot comparisons...")
+    plot_boxplot_comparison(log_data_by_num_pub, output_dir)
 
     return 0
 
