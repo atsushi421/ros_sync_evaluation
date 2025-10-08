@@ -43,30 +43,30 @@ source install/setup.bash
 The recommended way to run the evaluation uses a single component container process with SCHED_FIFO priority 99:
 
 ```bash
-# Launch with default workspace
 sudo scripts/run_with_rt_priority.sh <workspace_root> <num_publishers> [sync_policy] [max_interval_duration]
 ```
 
 **Arguments:**
-- `workspace_root`: Path to workspace (e.g., `/home/user/ros_sync_evaluation`)
-- `num_publishers`: Number of publishers (1-8)
-- `sync_policy`: Synchronization policy - `exact` or `approximate` (default: `exact`)
-- `max_interval_duration`: Max interval for approximate sync in milliseconds (default: `50`)
+- `workspace_root`: Path to workspace (required)
+  - Example: `/home/user/ros_sync_evaluation`
+- `num_publishers`: Number of publishers to launch (required, 1-8)
+- `sync_policy`: Synchronization policy (optional)
+  - Values: `exact` or `approximate`
+  - Default: `exact`
+- `max_interval_duration`: Max interval for approximate sync in milliseconds (optional)
+  - Default: `50`
 
 **Examples:**
 
 ```bash
-# 3 publishers with exact time sync (synchronized timestamps)
-sudo scripts/run_with_rt_priority.sh /home/user/ros_sync_evaluation 3
-
-# 3 publishers with exact time sync (explicit)
+# 3 publishers with exact time sync
 sudo scripts/run_with_rt_priority.sh /home/user/ros_sync_evaluation 3 exact
 
-# 4 publishers with approximate sync, 100ms window (natural timestamps)
+# 4 publishers with approximate sync, 100ms window
 sudo scripts/run_with_rt_priority.sh /home/user/ros_sync_evaluation 4 approximate 100
 
-# 8 publishers with approximate sync, 50ms window
-sudo scripts/run_with_rt_priority.sh /home/user/ros_sync_evaluation 8 approximate 50
+# Press Ctrl+C to stop evaluation
+# Latencies are automatically calculated and logs are cleaned up on exit
 ```
 
 ## Visualization
