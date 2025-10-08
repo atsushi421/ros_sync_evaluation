@@ -14,7 +14,7 @@ public:
     publisher_ = this->create_publisher<custom_msg::msg::HeaderExtraStamp>(
         "start_topic", 1000);
     timer_ = this->create_wall_timer(
-        100ms, std::bind(&SourcePublisher::timer_callback, this));
+        25ms, std::bind(&SourcePublisher::timer_callback, this));
   }
 
 private:
