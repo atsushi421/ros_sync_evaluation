@@ -53,8 +53,8 @@ def launch_setup(context, *args, **kwargs):
     container = ComposableNodeContainer(
         name='sync_evaluation_container',
         namespace='',
-        package='rclcpp_components',
-        executable='component_container_mt',
+        package='agnocast_components',
+        executable='agnocast_component_container_cie',
         composable_node_descriptions=composable_nodes,
         output='screen',
     )
