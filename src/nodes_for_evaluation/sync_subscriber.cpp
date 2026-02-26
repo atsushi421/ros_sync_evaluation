@@ -4,6 +4,8 @@
 #include <message_filters/sync_policies/approximate_time.h>
 #include <message_filters/sync_policies/exact_time.h>
 #include <message_filters/synchronizer.h>
+#include <mutex>
+#include <pthread.h>
 #include <pmu_analyzer.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_components/register_node_macro.hpp>
@@ -40,6 +42,8 @@ public:
 
 private:
   void callback(const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg1) {
+    std::call_once(thread_name_flag_,
+                   []() { pthread_setname_np(pthread_self(), "sync_sub"); });
     pmu_analyzer::ELAPSED_TIME_TIMESTAMP(session_name_, 0, true,
                                          to_microseconds(msg1->extra_stamp));
     RCLCPP_INFO(this->get_logger(),
@@ -51,6 +55,7 @@ private:
   rclcpp::Subscription<custom_msg::msg::HeaderExtraStamp>::SharedPtr sub1_;
   size_t sync_cb_index_;
   std::string session_name_;
+  std::once_flag thread_name_flag_;
 };
 
 // Specialization for 2 publishers
@@ -111,6 +116,8 @@ private:
 
   void callback(const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg1,
                 const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg2) {
+    std::call_once(thread_name_flag_,
+                   []() { pthread_setname_np(pthread_self(), "sync_sub"); });
     pmu_analyzer::ELAPSED_TIME_TIMESTAMP(session_name_, 0, true, 0);
     RCLCPP_INFO(this->get_logger(),
                 "SyncSubscriber: msg1_index = %s, msg2_index = %s, "
@@ -130,6 +137,7 @@ private:
   std::shared_ptr<message_filters::Synchronizer<ApproxSyncPolicy>> sync_approx_;
   size_t sync_cb_index_;
   std::string session_name_;
+  std::once_flag thread_name_flag_;
 };
 
 // Specialization for 3 publishers
@@ -196,6 +204,8 @@ private:
   void callback(const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg1,
                 const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg2,
                 const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg3) {
+    std::call_once(thread_name_flag_,
+                   []() { pthread_setname_np(pthread_self(), "sync_sub"); });
     pmu_analyzer::ELAPSED_TIME_TIMESTAMP(session_name_, 0, true, 0);
     RCLCPP_INFO(this->get_logger(),
                 "SyncSubscriber: msg1_index = %s, msg2_index = %s, msg3_index "
@@ -218,6 +228,7 @@ private:
   std::shared_ptr<message_filters::Synchronizer<ApproxSyncPolicy>> sync_approx_;
   size_t sync_cb_index_;
   std::string session_name_;
+  std::once_flag thread_name_flag_;
 };
 
 // Specialization for 4 publishers
@@ -288,6 +299,8 @@ private:
                 const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg2,
                 const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg3,
                 const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg4) {
+    std::call_once(thread_name_flag_,
+                   []() { pthread_setname_np(pthread_self(), "sync_sub"); });
     pmu_analyzer::ELAPSED_TIME_TIMESTAMP(session_name_, 0, true, 0);
     RCLCPP_INFO(
         this->get_logger(),
@@ -315,6 +328,7 @@ private:
   std::shared_ptr<message_filters::Synchronizer<ApproxSyncPolicy>> sync_approx_;
   size_t sync_cb_index_;
   std::string session_name_;
+  std::once_flag thread_name_flag_;
 };
 
 // Specialization for 5 publishers
@@ -393,6 +407,8 @@ private:
                 const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg3,
                 const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg4,
                 const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg5) {
+    std::call_once(thread_name_flag_,
+                   []() { pthread_setname_np(pthread_self(), "sync_sub"); });
     pmu_analyzer::ELAPSED_TIME_TIMESTAMP(session_name_, 0, true, 0);
     RCLCPP_INFO(
         this->get_logger(),
@@ -423,6 +439,7 @@ private:
   std::shared_ptr<message_filters::Synchronizer<ApproxSyncPolicy>> sync_approx_;
   size_t sync_cb_index_;
   std::string session_name_;
+  std::once_flag thread_name_flag_;
 };
 
 // Specialization for 6 publishers
@@ -507,6 +524,8 @@ private:
                 const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg4,
                 const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg5,
                 const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg6) {
+    std::call_once(thread_name_flag_,
+                   []() { pthread_setname_np(pthread_self(), "sync_sub"); });
     pmu_analyzer::ELAPSED_TIME_TIMESTAMP(session_name_, 0, true, 0);
     RCLCPP_INFO(
         this->get_logger(),
@@ -542,6 +561,7 @@ private:
   std::shared_ptr<message_filters::Synchronizer<ApproxSyncPolicy>> sync_approx_;
   size_t sync_cb_index_;
   std::string session_name_;
+  std::once_flag thread_name_flag_;
 };
 
 // Specialization for 7 publishers
@@ -632,6 +652,8 @@ private:
                 const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg5,
                 const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg6,
                 const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg7) {
+    std::call_once(thread_name_flag_,
+                   []() { pthread_setname_np(pthread_self(), "sync_sub"); });
     pmu_analyzer::ELAPSED_TIME_TIMESTAMP(session_name_, 0, true, 0);
     RCLCPP_INFO(
         this->get_logger(),
@@ -670,6 +692,7 @@ private:
   std::shared_ptr<message_filters::Synchronizer<ApproxSyncPolicy>> sync_approx_;
   size_t sync_cb_index_;
   std::string session_name_;
+  std::once_flag thread_name_flag_;
 };
 
 // Specialization for 8 publishers
@@ -766,6 +789,8 @@ private:
                 const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg6,
                 const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg7,
                 const custom_msg::msg::HeaderExtraStamp::ConstSharedPtr &msg8) {
+    std::call_once(thread_name_flag_,
+                   []() { pthread_setname_np(pthread_self(), "sync_sub"); });
     pmu_analyzer::ELAPSED_TIME_TIMESTAMP(session_name_, 0, true, 0);
     RCLCPP_INFO(
         this->get_logger(),
@@ -808,6 +833,7 @@ private:
   std::shared_ptr<message_filters::Synchronizer<ApproxSyncPolicy>> sync_approx_;
   size_t sync_cb_index_;
   std::string session_name_;
+  std::once_flag thread_name_flag_;
 };
 
 // Register each template specialization as a separate component

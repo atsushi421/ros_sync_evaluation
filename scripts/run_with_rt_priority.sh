@@ -120,7 +120,7 @@ echo "  Number of Publishers: $NUM_PUBLISHERS"
 echo "  Sync Policy: $SYNC_POLICY"
 echo "  Max Interval Duration: ${MAX_INTERVAL_DURATION}ms"
 echo "  Mode: Single Process (All Nodes in Component Container)"
-echo "  RT Priority: SCHED_FIFO 99"
+echo "  RT Priority: SCHED_FIFO 99 (sync_subscriber thread only)"
 echo "  PMU Config: ${PMU_ANALYZER_CONFIG_FILE:-<not set>}"
 echo "  PMU Log Dir: $LOG_DIR"
 echo ""
@@ -129,8 +129,8 @@ echo ""
 cleanup() {
 	echo ""
 	echo -e "${YELLOW}Shutting down all nodes...${NC}"
-	if [ -n "$CONTAINER_PID" ] && kill -0 "$CONTAINER_PID" 2>/dev/null; then
-		kill "$CONTAINER_PID" 2>/dev/null || true
+	if [ -n "$LAUNCH_PID" ] && kill -0 "$LAUNCH_PID" 2>/dev/null; then
+		kill "$LAUNCH_PID" 2>/dev/null || true
 	fi
 	wait
 	echo -e "${GREEN}All nodes stopped${NC}"
@@ -156,22 +156,51 @@ fi
 # Launch component container with all nodes (including sync_subscriber) in single process
 echo -e "${BLUE}Launching component container (all nodes in single process)...${NC}"
 ros2 launch "$LAUNCH_FILE" num_publishers:="$NUM_PUBLISHERS" sync_policy:="$SYNC_POLICY" max_interval_duration:="$MAX_INTERVAL_DURATION" &
-CONTAINER_PID=$!
-echo -e "${GREEN}  Container PID: $CONTAINER_PID${NC}"
+LAUNCH_PID=$!
+echo -e "${GREEN}  Launch PID: $LAUNCH_PID${NC}"
 
-# Wait a moment for the container process to start
+# Wait for the agnocast_component_container_cie process to start
 sleep 2
 
-# Set RT priority (SCHED_FIFO 99) for the component container process
-if [ -n "$CONTAINER_PID" ] && kill -0 "$CONTAINER_PID" 2>/dev/null; then
-	echo -e "${BLUE}Setting SCHED_FIFO priority 99 for container process...${NC}"
-	if chrt -f -p 99 "$CONTAINER_PID"; then
-		echo -e "${GREEN}  Successfully set RT priority SCHED_FIFO 99 for PID: $CONTAINER_PID${NC}"
-	else
-		echo -e "${YELLOW}  Warning: Failed to set RT priority${NC}"
-	fi
+# Find the actual container process PID (ros2 launch spawns it as a child)
+CONTAINER_PID=$(pgrep -f agnocast_component_container_cie | head -1)
+
+if [ -z "$CONTAINER_PID" ]; then
+	echo -e "${YELLOW}  Warning: agnocast_component_container_cie process not found${NC}"
 else
-	echo -e "${YELLOW}  Warning: Container process not found, skipping RT priority setting${NC}"
+	echo -e "${GREEN}  Container PID: $CONTAINER_PID${NC}"
+
+	# Set RT priority (SCHED_FIFO 99) only for the sync_subscriber thread.
+	# The thread name "sync_sub" is set by pthread_setname_np on the first callback,
+	# so we retry a few times waiting for messages to start flowing.
+	echo -e "${BLUE}Waiting for sync_subscriber thread (comm: sync_sub) in container process (PID: $CONTAINER_PID)...${NC}"
+	FOUND_SYNC_THREAD=false
+	for ATTEMPT in 1 2 3 4 5; do
+		for TID_DIR in /proc/"$CONTAINER_PID"/task/*; do
+			TID=$(basename "$TID_DIR")
+			THREAD_NAME=$(cat "$TID_DIR/comm" 2>/dev/null || true)
+			if [[ "$THREAD_NAME" == "sync_sub" ]]; then
+				if chrt -f -p 99 "$TID"; then
+					echo -e "${GREEN}  Set SCHED_FIFO 99 for TID: $TID (comm: $THREAD_NAME) [attempt $ATTEMPT]${NC}"
+					chrt -p "$TID"
+					FOUND_SYNC_THREAD=true
+				else
+					echo -e "${YELLOW}  Warning: Failed to set RT priority for TID: $TID${NC}"
+				fi
+				break 2
+			fi
+		done
+		echo -e "  Attempt $ATTEMPT: sync_sub thread not yet found, retrying in 1s..."
+		sleep 1
+	done
+	if [ "$FOUND_SYNC_THREAD" = false ]; then
+		echo -e "${YELLOW}  Warning: No sync_sub thread found after 5 attempts. Listing all threads:${NC}"
+		for TID_DIR in /proc/"$CONTAINER_PID"/task/*; do
+			TID=$(basename "$TID_DIR")
+			THREAD_NAME=$(cat "$TID_DIR/comm" 2>/dev/null || echo "???")
+			echo -e "    TID=$TID  comm=$THREAD_NAME"
+		done
+	fi
 fi
 
 echo ""
