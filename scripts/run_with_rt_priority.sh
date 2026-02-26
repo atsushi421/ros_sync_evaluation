@@ -80,6 +80,37 @@ if [ -z "$PMU_ANALYZER_CONFIG_FILE" ]; then
 	fi
 fi
 
+# Resolve PMU log directory from config (supports absolute and relative paths)
+LOG_DIR="$WORKSPACE_ROOT/pmu_analyzer_log"
+if [ -n "$PMU_ANALYZER_CONFIG_FILE" ] && [ -f "$PMU_ANALYZER_CONFIG_FILE" ]; then
+	CONFIG_LOG_PATH=$(python3 - "$PMU_ANALYZER_CONFIG_FILE" <<'PY'
+from pathlib import Path
+import sys
+
+cfg = Path(sys.argv[1])
+for line in cfg.read_text(encoding="utf-8", errors="ignore").splitlines():
+    stripped = line.strip()
+    if not stripped or stripped.startswith("#"):
+        continue
+    if stripped.startswith("log_path:"):
+        value = stripped.split(":", 1)[1].strip().strip('"\'')
+        print(value)
+        break
+PY
+)
+
+	if [ -n "$CONFIG_LOG_PATH" ]; then
+		if [[ "$CONFIG_LOG_PATH" = /* ]]; then
+			LOG_DIR="$CONFIG_LOG_PATH"
+		else
+			LOG_DIR="$WORKSPACE_ROOT/$CONFIG_LOG_PATH"
+		fi
+	fi
+fi
+
+# Ensure log directory exists before node startup
+mkdir -p "$LOG_DIR"
+
 # Display configuration
 echo -e "${GREEN}========================================${NC}"
 echo -e "${GREEN}ROS 2 Sync Evaluation Launcher (Component Container)${NC}"
@@ -91,6 +122,7 @@ echo "  Max Interval Duration: ${MAX_INTERVAL_DURATION}ms"
 echo "  Mode: Single Process (All Nodes in Component Container)"
 echo "  RT Priority: SCHED_FIFO 99"
 echo "  PMU Config: ${PMU_ANALYZER_CONFIG_FILE:-<not set>}"
+echo "  PMU Log Dir: $LOG_DIR"
 echo ""
 
 # Cleanup function to kill all background processes
@@ -105,7 +137,7 @@ cleanup() {
 
 	sleep 2 # Wait for log files to be written
 
-	python3 "$WORKSPACE_ROOT/scripts/calc_latency.py" "$WORKSPACE_ROOT/pmu_analyzer_log" $NUM_PUBLISHERS $SYNC_POLICY $MAX_INTERVAL_DURATION
+	python3 "$WORKSPACE_ROOT/scripts/calc_latency.py" "$LOG_DIR" $NUM_PUBLISHERS $SYNC_POLICY $MAX_INTERVAL_DURATION
 
 	exit 0
 }

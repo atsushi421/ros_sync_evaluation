@@ -73,9 +73,9 @@ private:
     if (sync_policy_ == "approximate") {
       msg->header.stamp = this->now();
     }
-    publisher_->publish(*msg);
     pmu_analyzer::ELAPSED_TIME_TIMESTAMP(session_name_, 0, true,
                                          to_microseconds(msg->header.stamp));
+    publisher_->publish(*msg);
   }
 
   rclcpp::Publisher<custom_msg::msg::HeaderExtraStamp>::SharedPtr publisher_;
