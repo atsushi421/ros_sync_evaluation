@@ -1,3 +1,6 @@
 [submodule "external/pmu_analyzer"]
 	path = external/pmu_analyzer
 	url = https://github.com/sykwer/pmu_analyzer.git
+[submodule "external/agnocast"]
+	path = external/agnocast
+	url = https://github.com/autowarefoundation/agnocast.git
